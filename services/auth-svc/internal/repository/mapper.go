@@ -8,7 +8,7 @@ import (
 	domain "github.com/oidiral/e-commerce/services/auth-svc/internal/domain/model"
 )
 
-func toDomainFromAuthUserAndRole(u db.AuthUser, role db.AuthRole) (domain.User, error) {
+func toDomainFromAuthUserAndRole(u db.User, role db.Role) (domain.User, error) {
 	id, err := uuid.FromBytes(u.ID.Bytes[:])
 	if err != nil {
 		return domain.User{}, fmt.Errorf("invalid UUID from AuthUser.ID: %w", err)
@@ -39,15 +39,3 @@ func toDomainFromGetUserByEmailRow(row db.GetUserByEmailRow) (domain.User, error
 		CreatedAt: row.CreatedAt.Time,
 	}, nil
 }
-
-// Если в будущем понадобится конвертировать domain.User → DB-параметры (например, для обновления),
-// можно добавить функции вида fromDomainToAuthUserParams и т.д.:
-//
-// func fromDomainToCreateUserParams(u domain.User) db.CreateUserParams {
-//     return db.CreateUserParams{
-//         ID:           u.ID,
-//         Email:        u.Email,
-//         PasswordHash: u.Password,
-//         Status:       int16(u.Status),
-//     }
-// }

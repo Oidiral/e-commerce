@@ -1,14 +1,14 @@
 -- +goose Up
 -- +goose StatementBegin
-INSERT INTO auth.roles (name) VALUES
+INSERT INTO roles (name) VALUES
     ('admin'),
-    ('user')
+    ('user');
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DELETE FROM auth.user_roles WHERE role_id IN (
-    SELECT id FROM auth.roles WHERE name IN ('user','admin')
+DELETE FROM user_roles WHERE role_id IN (
+    SELECT id FROM roles WHERE name IN ('user', 'admin')
 );
-DELETE FROM auth.roles WHERE name IN ('user','admin');
+DELETE FROM roles WHERE name IN ('user', 'admin');
 -- +goose StatementEnd

@@ -8,12 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type AuthRole struct {
+type Role struct {
 	ID   int16  `json:"id"`
 	Name string `json:"name"`
 }
 
-type AuthUser struct {
+type User struct {
 	ID           pgtype.UUID        `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
@@ -22,7 +22,7 @@ type AuthUser struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
-type AuthUserRole struct {
+type UserRole struct {
 	UserID pgtype.UUID `json:"user_id"`
 	RoleID int16       `json:"role_id"`
 }

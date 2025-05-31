@@ -12,7 +12,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO auth.users (email, password_hash)
+INSERT INTO users (email, password_hash)
 VALUES ($1, $2)
 RETURNING id, email, password_hash, status, created_at, updated_at
 `
@@ -22,9 +22,9 @@ type CreateUserParams struct {
 	PasswordHash string `json:"password_hash"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (AuthUser, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash)
-	var i AuthUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -37,7 +37,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (AuthUse
 }
 
 const createUserIfNotExists = `-- name: CreateUserIfNotExists :one
-INSERT INTO auth.users (email, password_hash)
+INSERT INTO users (email, password_hash)
 VALUES ($1, $2)
 ON CONFLICT (email) DO NOTHING
 RETURNING id, email, password_hash, status, created_at, updated_at
@@ -48,9 +48,9 @@ type CreateUserIfNotExistsParams struct {
 	PasswordHash string `json:"password_hash"`
 }
 
-func (q *Queries) CreateUserIfNotExists(ctx context.Context, arg CreateUserIfNotExistsParams) (AuthUser, error) {
+func (q *Queries) CreateUserIfNotExists(ctx context.Context, arg CreateUserIfNotExistsParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUserIfNotExists, arg.Email, arg.PasswordHash)
-	var i AuthUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -63,7 +63,7 @@ func (q *Queries) CreateUserIfNotExists(ctx context.Context, arg CreateUserIfNot
 }
 
 const createUserRole = `-- name: CreateUserRole :exec
-INSERT INTO auth.user_roles (user_id, role_id)
+INSERT INTO user_roles (user_id, role_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id, role_id) DO NOTHING
 `
@@ -80,13 +80,13 @@ func (q *Queries) CreateUserRole(ctx context.Context, arg CreateUserRoleParams) 
 
 const getRoleByName = `-- name: GetRoleByName :one
 SELECT id, name
-FROM auth.roles
+FROM roles
 WHERE name = $1
 `
 
-func (q *Queries) GetRoleByName(ctx context.Context, name string) (AuthRole, error) {
+func (q *Queries) GetRoleByName(ctx context.Context, name string) (Role, error) {
 	row := q.db.QueryRow(ctx, getRoleByName, name)
-	var i AuthRole
+	var i Role
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
@@ -100,9 +100,9 @@ SELECT
     u.created_at,
     u.updated_at,
     r.name AS role_name
-FROM auth.users u
-JOIN auth.user_roles ur ON ur.user_id = u.id
-JOIN auth.roles r ON r.id = ur.role_id
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id
+JOIN roles r ON r.id = ur.role_id
 WHERE u.email = $1
 `
 
@@ -132,7 +132,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, password_hash, status, created_at, updated_at FROM auth.users
+SELECT id, email, password_hash, status, created_at, updated_at FROM users
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
 `
@@ -142,15 +142,15 @@ type ListUsersParams struct {
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]AuthUser, error) {
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
 	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AuthUser
+	var items []User
 	for rows.Next() {
-		var i AuthUser
+		var i User
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,

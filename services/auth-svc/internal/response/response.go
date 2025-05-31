@@ -15,16 +15,16 @@ func (e *ApiError) Error() string {
 	return e.Message
 }
 
-func RespondWithError(c *gin.Context, code int, message string, details interface{}) {
+func RespondWithError(ctx *gin.Context, code int, message string, details interface{}) {
 	apiErr := &ApiError{
 		Code:    code,
 		Message: message,
 		Details: details,
 	}
-	c.Error(apiErr)
-	c.Abort()
+	ctx.Error(apiErr)
+	ctx.Abort()
 }
 
-func BadRequest(c *gin.Context, message string, details interface{}) {
-	RespondWithError(c, http.StatusBadRequest, message, details)
+func BadRequest(ctx *gin.Context, message string, details interface{}) {
+	RespondWithError(ctx, http.StatusBadRequest, message, details)
 }

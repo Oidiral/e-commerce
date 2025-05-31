@@ -20,7 +20,7 @@ type Repository struct {
 	db *pgxpool.Pool
 }
 
-func NewUserRepository(pool *pgxpool.Pool) AuthRepository {
+func NewAuthRepository(pool *pgxpool.Pool) AuthRepository {
 	return &Repository{
 		q:  db.New(pool),
 		db: pool,
