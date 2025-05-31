@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -34,12 +36,20 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (AuthUse
 	return i, err
 }
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, status, created_at, updated_at FROM auth.users WHERE email = $1
+const createUserIfNotExists = `-- name: CreateUserIfNotExists :one
+INSERT INTO auth.users (email, password_hash)
+VALUES ($1, $2)
+ON CONFLICT (email) DO NOTHING
+RETURNING id, email, password_hash, status, created_at, updated_at
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (AuthUser, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
+type CreateUserIfNotExistsParams struct {
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
+}
+
+func (q *Queries) CreateUserIfNotExists(ctx context.Context, arg CreateUserIfNotExistsParams) (AuthUser, error) {
+	row := q.db.QueryRow(ctx, createUserIfNotExists, arg.Email, arg.PasswordHash)
 	var i AuthUser
 	err := row.Scan(
 		&i.ID,
@@ -48,6 +58,75 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (AuthUser, e
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createUserRole = `-- name: CreateUserRole :exec
+INSERT INTO auth.user_roles (user_id, role_id)
+VALUES ($1, $2)
+ON CONFLICT (user_id, role_id) DO NOTHING
+`
+
+type CreateUserRoleParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	RoleID int16       `json:"role_id"`
+}
+
+func (q *Queries) CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error {
+	_, err := q.db.Exec(ctx, createUserRole, arg.UserID, arg.RoleID)
+	return err
+}
+
+const getRoleByName = `-- name: GetRoleByName :one
+SELECT id, name
+FROM auth.roles
+WHERE name = $1
+`
+
+func (q *Queries) GetRoleByName(ctx context.Context, name string) (AuthRole, error) {
+	row := q.db.QueryRow(ctx, getRoleByName, name)
+	var i AuthRole
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT
+    u.id,
+    u.email,
+    u.password_hash,
+    u.status,
+    u.created_at,
+    u.updated_at,
+    r.name AS role_name
+FROM auth.users u
+JOIN auth.user_roles ur ON ur.user_id = u.id
+JOIN auth.roles r ON r.id = ur.role_id
+WHERE u.email = $1
+`
+
+type GetUserByEmailRow struct {
+	ID           pgtype.UUID        `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash string             `json:"password_hash"`
+	Status       int16              `json:"status"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	RoleName     string             `json:"role_name"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RoleName,
 	)
 	return i, err
 }

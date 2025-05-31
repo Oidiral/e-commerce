@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/auth-svc/internal/db"
+	"github.com/oidiral/e-commerce/services/auth-svc/internal/middleware"
 	"os"
 	"time"
 
@@ -33,6 +35,9 @@ func main() {
 	}
 	defer database.Close()
 	logger.Info().Msg("Connected to database")
+
+	r := gin.New()
+	r.Use(gin.Recovery(), middleware.ApiErrorMiddleware(), gin.Logger())
 
 }
 

@@ -10,7 +10,10 @@ import (
 
 type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (AuthUser, error)
-	GetUserByEmail(ctx context.Context, email string) (AuthUser, error)
+	CreateUserIfNotExists(ctx context.Context, arg CreateUserIfNotExistsParams) (AuthUser, error)
+	CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error
+	GetRoleByName(ctx context.Context, name string) (AuthRole, error)
+	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]AuthUser, error)
 }
 
