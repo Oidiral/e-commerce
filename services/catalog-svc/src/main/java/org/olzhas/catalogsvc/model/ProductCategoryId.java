@@ -2,6 +2,7 @@ package org.olzhas.catalogsvc.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
@@ -15,9 +16,11 @@ import java.util.UUID;
 @Embeddable
 public class ProductCategoryId implements Serializable {
     private static final long serialVersionUID = 3188636540287936052L;
+    @NotNull
     @Column(name = "product_id", nullable = false)
     private UUID productId;
 
+    @NotNull
     @Column(name = "category_id", nullable = false)
     private UUID categoryId;
 
