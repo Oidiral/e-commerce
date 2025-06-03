@@ -19,14 +19,19 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,
     Optional<Page<Product>> findByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);
 
     @Query(
-            "SELECT p.id, p.name FROM Product p " +
+            "SELECT p.id AS productId, " +
+                    "p.name AS name, " +
+                    "pi.quantity AS quantity, " +
+                    "pp.amount AS latestPrice " +
+                    "FROM Product p " +
                     "JOIN ProductInventory pi ON pi.product = p " +
-                    "JOIN ProductPrice pp ON pp.product = p " +
+                    "JOIN ProductPrice pp     ON pp.product = p " +
                     "WHERE p.id = :productId " +
-                    "AND pp.createdAt = (" +
-                    "SELECT MAX(sub.createdAt) " +
-                    "FROM ProductPrice sub " +
-                    "WHERE sub.product = p)"
+                    "  AND pp.createdAt = ( " +
+                    "       SELECT MAX(sub.createdAt) " +
+                    "       FROM ProductPrice sub " +
+                    "       WHERE sub.product = p" +
+                    "     )"
     )
     Optional<ProductInventoryPriceView> findInternalInfo(UUID productId);
 

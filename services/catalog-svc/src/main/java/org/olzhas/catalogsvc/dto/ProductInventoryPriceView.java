@@ -6,6 +6,6 @@ import java.util.UUID;
 public interface ProductInventoryPriceView {
     UUID getProductId();
     String getName();
-    int getLatestPrice();
-    BigDecimal getQuantity();
+    Integer getQuantity();
+    BigDecimal getLatestPrice();
 }

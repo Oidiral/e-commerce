@@ -50,8 +50,8 @@ public class ProductServiceImpl implements ProductService {
                 .map(info -> new InternalProductDto(
                         info.getProductId(),
                         info.getName(),
-                        info.getQuantity(),
-                        info.getLatestPrice()))
+                        info.getLatestPrice(),
+                        info.getQuantity()))
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
     }
 
