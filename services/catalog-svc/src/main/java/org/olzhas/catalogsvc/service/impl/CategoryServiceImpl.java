@@ -32,8 +32,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public PageResponse<ProductDto> products(UUID id, Pageable p) {
-        Page<Product> page = productRepository.findByCategoryId(id, p)
-                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
+        Page<Product> page = productRepository.findByCategoryId(id, p);
+        if (page.isEmpty()) {
+            throw new NotFoundException("No products found for category with id: " + id);
+        }
         List<ProductDto> dtos = page.map(productMapper::toDto).getContent();
         return PageConverter.toPageResponse(dtos, page);
     }

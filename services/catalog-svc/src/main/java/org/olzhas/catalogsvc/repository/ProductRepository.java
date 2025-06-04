@@ -16,7 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,
         JpaSpecificationExecutor<Product> {
 
     @Query("SELECT p FROM ProductCategory pc JOIN pc.product p WHERE pc.category.id = :categoryId")
-    Optional<Page<Product>> findByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);
+    Page<Product> findByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);
 
     @Query(
             "SELECT p.id AS productId, " +

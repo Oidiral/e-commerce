@@ -2,11 +2,13 @@ package org.olzhas.catalogsvc.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.olzhas.catalogsvc.dto.*;
+import org.olzhas.catalogsvc.exceptionHandler.BadRequestException;
 import org.olzhas.catalogsvc.exceptionHandler.NotFoundException;
 import org.olzhas.catalogsvc.mapper.ProductImageMapper;
 import org.olzhas.catalogsvc.mapper.ProductMapper;
 import org.olzhas.catalogsvc.model.Product;
 import org.olzhas.catalogsvc.repository.ProductImageRepository;
+import org.olzhas.catalogsvc.repository.ProductInventoryRepository;
 import org.olzhas.catalogsvc.repository.ProductRepository;
 import org.olzhas.catalogsvc.repository.spec.ProductSpecificationBuilder;
 import org.olzhas.catalogsvc.service.ProductService;
@@ -29,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductImageRepository productImageRepository;
     private final ProductImageMapper productImageMapper;
+    private final ProductInventoryRepository productInventoryRepository;
 
     @Override
     public PageResponse<ProductDto> findAll(Pageable pageable) {
@@ -43,6 +46,8 @@ public class ProductServiceImpl implements ProductService {
                 .map(productMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
     }
+
+
 
     @Override
     public InternalProductDto getWithQuantity(UUID id) {
@@ -69,6 +74,30 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(productImageMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void reserve(UUID id, int qty) {
+        productInventoryRepository.findById(id)
+                .ifPresentOrElse(inv -> {
+                    if (inv.getQuantity() < qty) {
+                        throw new BadRequestException("Not enough stock");
+                    }
+                    inv.setQuantity(inv.getQuantity() - qty);
+                }, () -> {
+                    throw new NotFoundException("Product not found with id: " + id);
+                });
+    }
+
+    @Override
+    @Transactional
+    public void release(UUID id, int qty) {
+        productInventoryRepository.findById(id)
+                .ifPresentOrElse(inv -> inv.setQuantity(inv.getQuantity() + qty),
+                        () -> {
+                            throw new NotFoundException("Product not found with id: " + id);
+                        });
     }
 
 
