@@ -11,4 +11,6 @@ public interface ImageService {
     List<ProductImageDto> upload(UUID productId, MultipartFile file, boolean primary);
 
     Resource download(UUID imageId);
+
+    void delete(UUID imageId);
 }

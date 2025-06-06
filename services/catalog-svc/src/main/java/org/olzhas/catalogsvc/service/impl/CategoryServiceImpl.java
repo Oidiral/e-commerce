@@ -1,17 +1,17 @@
 package org.olzhas.catalogsvc.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.olzhas.catalogsvc.dto.CategoryDto;
-import org.olzhas.catalogsvc.dto.PageResponse;
-import org.olzhas.catalogsvc.dto.ProductDto;
+import org.olzhas.catalogsvc.dto.*;
 import org.olzhas.catalogsvc.exceptionHandler.NotFoundException;
 import org.olzhas.catalogsvc.mapper.CategoryMapper;
 import org.olzhas.catalogsvc.mapper.ProductMapper;
+import org.olzhas.catalogsvc.model.Category;
 import org.olzhas.catalogsvc.model.Product;
 import org.olzhas.catalogsvc.repository.CategoryRepository;
 import org.olzhas.catalogsvc.repository.ProductRepository;
 import org.olzhas.catalogsvc.service.CategoryService;
 import org.olzhas.catalogsvc.utils.PageConverter;
+import org.olzhas.catalogsvc.utils.SlugUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,5 +46,57 @@ public class CategoryServiceImpl implements CategoryService {
                 .stream()
                 .map(categoryMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public CategoryDto create(CategoryCreateReq categoryDto) {
+        Category category = categoryMapper.toEntity(categoryDto);
+        String baseSlug = SlugUtil.toSlug(categoryDto.getName());
+        String candidate = baseSlug;
+        int counter = 1;
+
+        while (categoryRepository.existsBySlug(candidate)) {
+            candidate = baseSlug + "-" + counter++;
+        }
+
+        category.setSlug(candidate);
+        return categoryMapper.toDto(categoryRepository.save(category));
+    }
+
+    @Override
+    @Transactional
+    public CategoryDto rename(UUID id, CategoryUpdateReq categoryDto) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category with id: " + id + " not found"));
+
+        categoryMapper.partialUpdate(categoryDto, category);
+
+        String baseSlug = SlugUtil.toSlug(category.getName());
+        String candidate = baseSlug;
+        int counter = 1;
+
+        while (categoryRepository.existsBySlug(candidate) && !candidate.equals(category.getSlug())) {
+            candidate = baseSlug + "-" + counter++;
+        }
+
+        category.setSlug(candidate);
+        return categoryMapper.toDto(categoryRepository.save(category));
+    }
+
+    @Override
+    public void delete(UUID id) {
+        if (!categoryRepository.existsById(id)) {
+            throw new NotFoundException("Category with id: " + id + " not found");
+        }
+        categoryRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteSlug(String slug) {
+        if (!categoryRepository.existsBySlug(slug)) {
+            throw new NotFoundException("Category with slug: " + slug + " not found");
+        }
+        categoryRepository.deleteBySlug(slug);
     }
 }

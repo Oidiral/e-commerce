@@ -3,6 +3,7 @@ package org.olzhas.catalogsvc.service.impl;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import org.olzhas.catalogsvc.config.MinioProperties;
 import org.olzhas.catalogsvc.dto.ProductImageDto;
@@ -74,5 +75,23 @@ public class ProductImageServiceImpl implements ImageService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to download image", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID imageId) {
+        ProductImage image = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new NotFoundException("Image not found with id: " + imageId));
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(properties.getBucket())
+                            .object(image.getS3Key())
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete file from S3", e);
+        }
+        productImageRepository.delete(image);
     }
 }

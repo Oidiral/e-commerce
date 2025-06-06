@@ -10,6 +10,4 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoryCreateReq {
     @NotBlank String name;
-    @NotBlank
-    String slug;
 }

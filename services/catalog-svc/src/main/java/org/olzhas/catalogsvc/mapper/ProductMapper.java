@@ -13,9 +13,7 @@ public interface ProductMapper {
 
     Product toEntity(ProductCreateReq productCreateReq);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
+
     Product toEntity(ProductUpdateReq request);
 
     ProductDto toDto(Product product);
