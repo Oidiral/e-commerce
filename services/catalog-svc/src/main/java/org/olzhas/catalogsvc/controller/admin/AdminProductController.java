@@ -73,4 +73,10 @@ public class AdminProductController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + imageId)
                 .body(resource);
     }
+
+    @DeleteMapping("/images/{imageId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteImage(@PathVariable UUID imageId) {
+        imageService.delete(imageId);
+    }
 }
