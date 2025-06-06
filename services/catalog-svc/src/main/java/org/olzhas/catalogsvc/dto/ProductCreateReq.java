@@ -17,7 +17,8 @@ import java.util.UUID;
 public class ProductCreateReq {
     @NotBlank
     String sku;
-    @NotBlank String name;
+    @NotBlank
+    String name;
     String description;
     @NotNull
     @Positive

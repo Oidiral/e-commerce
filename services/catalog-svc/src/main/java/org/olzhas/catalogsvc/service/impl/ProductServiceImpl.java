@@ -1,5 +1,6 @@
 package org.olzhas.catalogsvc.service.impl;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.olzhas.catalogsvc.dto.*;
 import org.olzhas.catalogsvc.exceptionHandler.BadRequestException;
@@ -19,6 +20,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +48,6 @@ public class ProductServiceImpl implements ProductService {
                 .map(productMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
     }
-
 
 
     @Override
@@ -100,5 +101,45 @@ public class ProductServiceImpl implements ProductService {
                         });
     }
 
+    @Override
+    @Transactional
+    public ProductDto create(@Valid ProductCreateReq req) {
+        Product product = productMapper.toEntity(req);
+        productRepository.save(product);
+        return productMapper.toDto(product);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        if (!productRepository.existsById(id)) {
+            throw new NotFoundException("Product not found with id: " + id);
+        }
+        productRepository.deleteById(id);
+    }
+
+    @Override
+    public ProductDto updateHard(UUID id, ProductUpdateReq req) {
+        Product ex = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
+
+        Product newProduct = productMapper.toEntity(req);
+        newProduct.setId(ex.getId());
+        newProduct.setCreatedAt(ex.getCreatedAt());
+        newProduct.setUpdatedAt(Instant.now());
+
+        return productMapper.toDto(productRepository.save(newProduct));
+    }
+
+    @Override
+    public ProductDto updateSoft(UUID id, ProductPatchReq request) {
+        Product ex = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
+
+        Product updatedProduct = productMapper.partialUpdate(request, ex);
+        updatedProduct.setUpdatedAt(Instant.now());
+
+        return productMapper.toDto(productRepository.save(updatedProduct));
+    }
 
 }

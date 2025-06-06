@@ -1,6 +1,9 @@
 package org.olzhas.catalogsvc.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,11 +12,13 @@ import java.util.UUID;
 
 @Data
 @NoArgsConstructor
+@Builder
 @AllArgsConstructor
 public class ProductUpdateReq {
-    String name;
-    String description;
-    BigDecimal price;
-    Integer quantity;
-    UUID categoryId;
+    @NotBlank
+    @Size(max = 64)
+    private String sku;
+    @NotBlank
+    private String name;
+    private String description;
 }
