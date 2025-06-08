@@ -96,12 +96,20 @@ func (s *AuthService) Refresh(refreshToken string) (*TokenPair, error) {
 		s.log.Error().Msg("invalid token email")
 		return nil, AppErr.ErrInvalidToken
 	}
-	roles, ok := claims["roles"].([]string)
+	rolesClaim, ok := claims["roles"].([]interface{})
 	if !ok {
 		s.log.Error().Msg("invalid token roles")
 		return nil, AppErr.ErrInvalidToken
 	}
-
+	roles := make([]string, len(rolesClaim))
+	for i, v := range rolesClaim {
+		r, ok := v.(string)
+		if !ok {
+			s.log.Error().Msg("invalid token roles")
+			return nil, AppErr.ErrInvalidToken
+		}
+		roles[i] = r
+	}
 	u := user.User{
 		ID:    subUUID,
 		Email: email,

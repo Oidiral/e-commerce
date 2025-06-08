@@ -201,7 +201,7 @@ func TestAuthService_Refresh_Success(t *testing.T) {
 	claims := jwt.MapClaims{
 		"sub":   userId.String(),
 		"email": "user@example.com",
-		"role":  "user",
+		"roles": []string{"user"},
 		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 		"iat":   time.Now().Unix(),
 	}
@@ -233,7 +233,7 @@ func TestAuthService_Refresh_ExpiredToken(t *testing.T) {
 	claims := jwt.MapClaims{
 		"sub":   uuid.New().String(),
 		"email": "user@example.com",
-		"role":  "user",
+		"roles": []string{"user"},
 		"exp":   time.Now().Add(-time.Hour).Unix(),
 		"iat":   time.Now().Add(-2 * time.Hour).Unix(),
 	}
