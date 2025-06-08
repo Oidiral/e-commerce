@@ -16,6 +16,8 @@ public class ProductFilter {
     @Min(value = 0, message = "Max price must be greater than or equal to 0")
     private Double maxPrice;
 
+    private String sku;
+
     private String type;
 
     private Boolean available;
