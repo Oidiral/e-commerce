@@ -133,7 +133,7 @@ func (s *CartSvc) Clear(ctx context.Context, cartID uuid.UUID) error {
 			return ErrInternal
 		}
 	}
-	s.rds.Del(ctx, s.cacheKey(cartID))
+	go s.rds.Del(ctx, s.cacheKey(cartID))
 	return nil
 }
 
