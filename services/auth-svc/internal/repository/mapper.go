@@ -19,7 +19,7 @@ func toDomainFromAuthUserAndRole(u db.User, role db.Role) (domain.User, error) {
 		Email:     u.Email,
 		Password:  u.PasswordHash,
 		Status:    u.Status,
-		Role:      role.Name,
+		Roles:     []string{role.Name},
 		CreatedAt: u.CreatedAt.Time,
 	}, nil
 }
@@ -35,7 +35,7 @@ func toDomainFromGetUserByEmailRow(row db.GetUserByEmailRow) (domain.User, error
 		Email:     row.Email,
 		Password:  row.PasswordHash,
 		Status:    row.Status,
-		Role:      row.RoleName,
+		Roles:     row.Roles,
 		CreatedAt: row.CreatedAt.Time,
 	}, nil
 }

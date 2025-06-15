@@ -96,16 +96,24 @@ func (s *AuthService) Refresh(refreshToken string) (*TokenPair, error) {
 		s.log.Error().Msg("invalid token email")
 		return nil, AppErr.ErrInvalidToken
 	}
-	role, ok := claims["role"].(string)
+	rolesClaim, ok := claims["roles"].([]interface{})
 	if !ok {
-		s.log.Error().Msg("invalid token role")
+		s.log.Error().Msg("invalid token roles")
 		return nil, AppErr.ErrInvalidToken
 	}
-
+	roles := make([]string, len(rolesClaim))
+	for i, v := range rolesClaim {
+		r, ok := v.(string)
+		if !ok {
+			s.log.Error().Msg("invalid token roles")
+			return nil, AppErr.ErrInvalidToken
+		}
+		roles[i] = r
+	}
 	u := user.User{
 		ID:    subUUID,
 		Email: email,
-		Role:  role,
+		Roles: roles,
 	}
 	access, accExp, err := s.createAccessToken(&u)
 	if err != nil {
@@ -158,7 +166,7 @@ func (s *AuthService) createAccessToken(u *user.User) (string, time.Time, error)
 	claims := jwt.MapClaims{
 		"sub":   u.ID,
 		"email": u.Email,
-		"role":  u.Role,
+		"roles": u.Roles,
 		"exp":   exp.Unix(),
 		"iat":   now.Unix(),
 	}
@@ -176,7 +184,7 @@ func (s *AuthService) createRefreshToken(u *user.User) (string, time.Time, error
 	claims := jwt.MapClaims{
 		"sub":   u.ID,
 		"email": u.Email,
-		"role":  u.Role,
+		"roles": u.Roles,
 		"exp":   exp.Unix(),
 		"iat":   now.Unix(),
 	}

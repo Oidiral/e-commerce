@@ -2,7 +2,9 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	user "github.com/oidiral/e-commerce/services/auth-svc/internal/domain/model"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,11 +32,14 @@ func NewAuthRepository(pool *pgxpool.Pool) AuthRepository {
 func (r *Repository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	dbUser, err := r.q.GetUserByEmail(ctx, email)
 	if err != nil {
-		return &user.User{}, appErr.ErrNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, appErr.ErrNotFound
+		}
+		return nil, fmt.Errorf("get user by email: %w", err)
 	}
 	u, err := toDomainFromGetUserByEmailRow(dbUser)
 	if err != nil {
-		return &user.User{}, fmt.Errorf("to domain from get user by email row: %w", err)
+		return nil, fmt.Errorf("to domain from get user by email row: %w", err)
 	}
 	return &u, nil
 }

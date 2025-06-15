@@ -40,7 +40,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 		ID:       userId,
 		Email:    "test@example.com",
 		Password: string(hashedPassword),
-		Role:     "user",
+		Roles:    []string{"user"},
 		Status:   1,
 	}
 
@@ -80,7 +80,7 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 		ID:       uuid.New(),
 		Email:    "test2@example.com",
 		Password: string(realHash),
-		Role:     "user",
+		Roles:    []string{"user"},
 		Status:   1,
 	}
 
@@ -140,7 +140,7 @@ func TestAuthService_RegisterUser_Success(t *testing.T) {
 	mockUser := &model.User{
 		ID:    userId,
 		Email: "newuser@example.com",
-		Role:  "user",
+		Roles: []string{"user"},
 	}
 
 	mockRepo.
@@ -201,7 +201,7 @@ func TestAuthService_Refresh_Success(t *testing.T) {
 	claims := jwt.MapClaims{
 		"sub":   userId.String(),
 		"email": "user@example.com",
-		"role":  "user",
+		"roles": []string{"user"},
 		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 		"iat":   time.Now().Unix(),
 	}
@@ -233,7 +233,7 @@ func TestAuthService_Refresh_ExpiredToken(t *testing.T) {
 	claims := jwt.MapClaims{
 		"sub":   uuid.New().String(),
 		"email": "user@example.com",
-		"role":  "user",
+		"roles": []string{"user"},
 		"exp":   time.Now().Add(-time.Hour).Unix(),
 		"iat":   time.Now().Add(-2 * time.Hour).Unix(),
 	}

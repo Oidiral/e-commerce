@@ -99,11 +99,12 @@ SELECT
     u.status,
     u.created_at,
     u.updated_at,
-    r.name AS role_name
+    ARRAY_REMOVE(ARRAY_AGG(r.name), NULL)::TEXT[] AS roles
 FROM users u
-JOIN user_roles ur ON ur.user_id = u.id
-JOIN roles r ON r.id = ur.role_id
+LEFT JOIN user_roles ur ON ur.user_id = u.id
+LEFT JOIN roles r ON r.id = ur.role_id
 WHERE u.email = $1
+GROUP BY u.id
 `
 
 type GetUserByEmailRow struct {
@@ -113,7 +114,7 @@ type GetUserByEmailRow struct {
 	Status       int16              `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	RoleName     string             `json:"role_name"`
+	Roles        []string           `json:"roles"`
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
@@ -126,7 +127,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RoleName,
+		&i.Roles,
 	)
 	return i, err
 }

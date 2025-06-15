@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 public final class PageConverter {
 
     private PageConverter() {
+        throw new UnsupportedOperationException("Utility class");
     }
 
     public static <DTO, E> PageResponse<DTO> toPageResponse(List<DTO> dtos, Page<E> page) {

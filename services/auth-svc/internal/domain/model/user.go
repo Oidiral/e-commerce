@@ -11,6 +11,6 @@ type User struct {
 	Email     string
 	Password  string
 	Status    int16
-	Role      string
+	Roles     []string
 	CreatedAt time.Time
 }

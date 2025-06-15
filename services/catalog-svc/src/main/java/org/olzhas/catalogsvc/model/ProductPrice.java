@@ -37,4 +37,11 @@ public class ProductPrice {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @PrePersist
+    private void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
+
 }

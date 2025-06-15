@@ -32,8 +32,9 @@ SELECT
     u.status,
     u.created_at,
     u.updated_at,
-    r.name AS role_name
+    ARRAY_REMOVE(ARRAY_AGG(r.name), NULL)::TEXT[] AS roles
 FROM users u
-JOIN user_roles ur ON ur.user_id = u.id
-JOIN roles r ON r.id = ur.role_id
-WHERE u.email = $1;
+LEFT JOIN user_roles ur ON ur.user_id = u.id
+LEFT JOIN roles r ON r.id = ur.role_id
+WHERE u.email = $1
+GROUP BY u.id;

@@ -15,6 +15,9 @@ public class ProductSpecificationBuilder {
             if (filter.getCategoryId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category").get("id"), filter.getCategoryId()));
             }
+            if (filter.getSku() != null){
+                predicates.add(criteriaBuilder.equal(root.get("sku"), filter.getSku()));
+            }
             if (filter.getMinPrice() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), filter.getMinPrice()));
             }
