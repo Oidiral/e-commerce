@@ -11,12 +11,18 @@ type Config struct {
 	Env      string         `mapstructure:"cart_env"`
 	Server   ServerConfig   `mapstructure:",squash"`
 	Database DatabaseConfig `mapstructure:",squash"`
+	Redis    Redis          `mapstructure:",squash"`
 }
 
 type ServerConfig struct {
 	Port         string        `mapstructure:"cart_server_port"`
 	ReadTimeout  time.Duration `mapstructure:"cart_server_read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"cart_server_write_timeout"`
+}
+
+type Redis struct {
+	Host     string `mapstructure:"cart_redis_host"`
+	Password string `mapstructure:"cart_redis_password" default:""`
 }
 
 type DatabaseConfig struct {
@@ -53,6 +59,8 @@ func LoadConfig() (*Config, error) {
 	_ = viper.BindEnv("cart_db_max_open_conns", "CART_DB_MAX_OPEN_CONNS")
 	_ = viper.BindEnv("cart_db_max_idle_conns", "CART_DB_MAX_IDLE_CONNS")
 	_ = viper.BindEnv("cart_db_conn_timeout", "CART_DB_CONN_TIMEOUT")
+	_ = viper.BindEnv("cart_redis_host", "CART_REDIS_HOST")
+	_ = viper.BindEnv("cart_redis_password", "CART_REDIS_PASSWORD")
 
 	viper.AutomaticEnv()
 
