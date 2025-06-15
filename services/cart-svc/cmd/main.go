@@ -1,0 +1,72 @@
+package main
+
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/oidiral/e-commerce/services/cart-svc/config"
+	middleware "github.com/oidiral/e-commerce/services/cart-svc/internal/contoller/middleware"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/db"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"os"
+	"time"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
+)
+
+func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+	logger := SetupLogger(cfg.Env)
+	logger.Info().Msg("Cart service started")
+	database, err := db.NewPool(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to connect to database")
+	}
+	defer database.Close()
+	logger.Info().Msg("Connected to database")
+
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(middleware.LoggingMiddleware(logger))
+
+	logger.Info().Msg("Routes registered")
+	if err := router.Run(cfg.Server.Port); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to start server")
+	}
+}
+
+func SetupLogger(env string) zerolog.Logger {
+	zerolog.TimeFieldFormat = time.RFC3339
+
+	fmt.Println("Logger environment:", env)
+
+	switch env {
+	case envLocal:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		return log.Output(zerolog.ConsoleWriter{
+			Out:        os.Stderr,
+			TimeFormat: time.RFC3339,
+		})
+	case envDev:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		return zerolog.New(os.Stdout).
+			With().
+			Timestamp().
+			Logger()
+	case envProd:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		return zerolog.New(os.Stdout).
+			With().
+			Timestamp().
+			Logger()
+	default:
+		panic("unknown environment: " + env)
+	}
+}
