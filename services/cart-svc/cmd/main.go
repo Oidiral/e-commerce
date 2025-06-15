@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/cart-svc/config"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/controller"
 	middleware "github.com/oidiral/e-commerce/services/cart-svc/internal/controller/middleware"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/db"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/repository/postgres"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -32,9 +35,19 @@ func main() {
 	defer database.Close()
 	logger.Info().Msg("Connected to database")
 
+	redisClient, err := db.NewRedisClient(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to connect to redis")
+	}
+
+	cartRepo := postgres.NewCartRepoPg(database)
+	cartService := service.NewCartService(cartRepo, logger, redisClient)
+
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(middleware.LoggingMiddleware(logger))
+
+	controller.RegisterRoutes(router, cartService)
 
 	logger.Info().Msg("Routes registered")
 	if err := router.Run(cfg.Server.Port); err != nil {

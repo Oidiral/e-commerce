@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/db"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +23,8 @@ var (
 
 const (
 	cacheKeyPrefix = "cart:"
-	cacheTTL       = 30 * 24 * time.Hour // 30 days TTL
+	cacheTTL       = 30 * 24 * time.Hour
+	bgOpTimeout    = 5 * time.Second
 )
 
 type CartService interface {
@@ -40,8 +42,8 @@ type CartSvc struct {
 	rds *redis.Client
 }
 
-func NewCartService(dbRepo postgres.CartRepository, logger zerolog.Logger, rdb *redis.Client) *CartSvc {
-	return &CartSvc{db: dbRepo, log: logger, rds: rdb}
+func NewCartService(dbRepo postgres.CartRepository, logger zerolog.Logger, rdb *db.RedisClient) *CartSvc {
+	return &CartSvc{db: dbRepo, log: logger, rds: rdb.Client}
 }
 
 func (s *CartSvc) GetCart(ctx context.Context, cartID uuid.UUID) (*model.Cart, error) {
@@ -67,7 +69,11 @@ func (s *CartSvc) GetCart(ctx context.Context, cartID uuid.UUID) (*model.Cart, e
 		return nil, ErrInternal
 	}
 	s.log.Info().Str("cart_id", cartID.String()).Msg("cart loaded from DB")
-	go s.refreshCache(ctx, cartID, cart)
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
+		defer cancel()
+		s.refreshCache(bgCtx, cartID, cart)
+	}()
 	return cart, nil
 }
 
@@ -86,7 +92,11 @@ func (s *CartSvc) AddItem(ctx context.Context, cartID, productID uuid.UUID, pric
 			return ErrInternal
 		}
 	}
-	go s.refreshCache(ctx, cartID, nil)
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
+		defer cancel()
+		s.refreshCache(bgCtx, cartID, nil)
+	}()
 	return nil
 }
 
@@ -105,7 +115,11 @@ func (s *CartSvc) ChangeQty(ctx context.Context, cartID, productID uuid.UUID, qt
 			return ErrInternal
 		}
 	}
-	go s.refreshCache(ctx, cartID, nil)
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
+		defer cancel()
+		s.refreshCache(bgCtx, cartID, nil)
+	}()
 	return nil
 }
 
@@ -119,7 +133,11 @@ func (s *CartSvc) RemoveItem(ctx context.Context, cartID, productID uuid.UUID) e
 			return ErrInternal
 		}
 	}
-	go s.refreshCache(ctx, cartID, nil)
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
+		defer cancel()
+		s.refreshCache(bgCtx, cartID, nil)
+	}()
 	return nil
 }
 
@@ -133,7 +151,14 @@ func (s *CartSvc) Clear(ctx context.Context, cartID uuid.UUID) error {
 			return ErrInternal
 		}
 	}
-	go s.rds.Del(ctx, s.cacheKey(cartID))
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
+		defer cancel()
+		if err := s.rds.Del(bgCtx, s.cacheKey(cartID)).Err(); err != nil {
+			s.log.Warn().Err(err).Str("cart_id", cartID.String()).Msg("failed to delete cache on Clear")
+		}
+		s.log.Info().Str("cart_id", cartID.String()).Msg("cart cleared and cache deleted")
+	}()
 	return nil
 }
 
