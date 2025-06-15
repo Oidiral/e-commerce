@@ -8,8 +8,6 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog"
-
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/model"
 	db "github.com/oidiral/e-commerce/services/cart-svc/internal/repository/sqlc"
 )
@@ -30,9 +28,8 @@ type CartRepository interface {
 }
 
 type cartRepoPg struct {
-	q      *db.Queries
-	db     *pgxpool.Pool
-	logger zerolog.Logger
+	q  *db.Queries
+	db *pgxpool.Pool
 }
 
 func NewCartRepoPg(pool *pgxpool.Pool) CartRepository {

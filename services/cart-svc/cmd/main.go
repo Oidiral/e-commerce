@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/cart-svc/config"
-	middleware "github.com/oidiral/e-commerce/services/cart-svc/internal/contoller/middleware"
+	middleware "github.com/oidiral/e-commerce/services/cart-svc/internal/controller/middleware"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/db"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
