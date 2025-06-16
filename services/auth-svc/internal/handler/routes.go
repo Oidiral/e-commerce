@@ -15,5 +15,6 @@ func RegisterRoutes(router *gin.Engine, authService *service.AuthService) {
 		api.POST("/register", authHandler.Register)
 		api.POST("/login", authHandler.Login)
 		api.POST("/refresh", authHandler.Refresh)
+		api.POST("/token", authHandler.ClientToken)
 	}
 }

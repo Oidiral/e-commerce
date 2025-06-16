@@ -15,13 +15,14 @@ import (
 )
 
 type AuthService struct {
-	repo repository.AuthRepository
-	log  zerolog.Logger
-	cfg  *config.Config
+	repo    repository.AuthRepository
+	log     zerolog.Logger
+	cfg     *config.Config
+	cliRepo repository.ClientRepository
 }
 
-func NewAuthService(repo repository.AuthRepository, log zerolog.Logger, cfg *config.Config) *AuthService {
-	return &AuthService{repo: repo, log: log, cfg: cfg}
+func NewAuthService(repo repository.AuthRepository, log zerolog.Logger, cfg *config.Config, cliRepo repository.ClientRepository) *AuthService {
+	return &AuthService{repo: repo, log: log, cfg: cfg, cliRepo: cliRepo}
 }
 
 type TokenPair struct {
@@ -29,6 +30,10 @@ type TokenPair struct {
 	RefreshToken     string `json:"refreshToken"`
 	AccessExpiresAt  int64  `json:"accessExpiresAt"`
 	RefreshExpiresAt int64  `json:"refreshExpiresAt"`
+}
+type TokenService struct {
+	AccessToken     string `json:"accessToken"`
+	AccessExpiresAt int64  `json:"accessExpiresAt"`
 }
 
 func (s *AuthService) RegisterUser(ctx context.Context, email, password string) (*TokenPair, error) {
@@ -194,4 +199,35 @@ func (s *AuthService) createRefreshToken(u *user.User) (string, time.Time, error
 		return "", time.Time{}, err
 	}
 	return jw, exp, nil
+}
+
+func (s *AuthService) ClientToken(ctx context.Context, id string, secret string) (*TokenService, error) {
+	cli, err := s.cliRepo.GetById(ctx, id)
+	if err != nil {
+		if errors.Is(err, AppErr.ErrNotFound) {
+			return nil, AppErr.ErrInvalidCredentials
+		}
+		s.log.Error().Err(err).Msg("get client by id")
+		return nil, err
+	}
+	if !utils.CheckPasswordHash(secret, cli.Secret) {
+		return nil, AppErr.ErrInvalidCredentials
+	}
+	now := time.Now()
+	exp := now.Add(s.cfg.JWT.AccessTokenTTL)
+	claims := jwt.MapClaims{
+		"sub":   cli.ID,
+		"roles": cli.Roles,
+		"exp":   exp.Unix(),
+		"iat":   now.Unix(),
+	}
+	jw, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(s.cfg.JWT.Secret))
+	if err != nil {
+		s.log.Error().Err(err).Msg("create client token")
+		return nil, err
+	}
+	return &TokenService{
+		AccessToken:     jw,
+		AccessExpiresAt: exp.Unix(),
+	}, nil
 }

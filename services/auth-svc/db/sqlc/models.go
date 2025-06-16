@@ -8,6 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Client struct {
+	ID         string             `json:"id"`
+	SecretHash string             `json:"secret_hash"`
+	Roles      []string           `json:"roles"`
+	Status     int16              `json:"status"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type Role struct {
 	ID   int16  `json:"id"`
 	Name string `json:"name"`

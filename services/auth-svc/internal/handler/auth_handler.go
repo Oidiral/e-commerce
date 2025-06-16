@@ -86,3 +86,26 @@ func (h *AuthHandler) Refresh(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, tokens)
 }
+
+func (h *AuthHandler) ClientToken(ctx *gin.Context) {
+	var req dto.ClientCredentialsRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		handleValidationError(ctx, err)
+		return
+	}
+	tokens, err := h.svc.ClientToken(ctx.Request.Context(), req.ClientID, req.ClientSecret)
+	if err != nil {
+		switch {
+		case errors.Is(err, domainErr.ErrInvalidCredentials):
+			response.RespondWithError(ctx, http.StatusUnauthorized,
+				"неверные учетные данные клиента", nil)
+			return
+		default:
+			response.RespondWithError(ctx, http.StatusInternalServerError,
+				"внутренняя ошибка сервера", nil)
+			return
+		}
+	}
+	ctx.JSON(http.StatusOK, tokens)
+
+}

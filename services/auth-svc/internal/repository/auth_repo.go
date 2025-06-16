@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
-	user "github.com/oidiral/e-commerce/services/auth-svc/internal/domain/model"
+	model "github.com/oidiral/e-commerce/services/auth-svc/internal/domain/model"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	db "github.com/oidiral/e-commerce/services/auth-svc/db/sqlc"
@@ -13,8 +13,8 @@ import (
 )
 
 type AuthRepository interface {
-	CreateIfNotExists(ctx context.Context, email, hash string) (*user.User, error)
-	GetByEmail(ctx context.Context, email string) (*user.User, error)
+	CreateIfNotExists(ctx context.Context, email, hash string) (*model.User, error)
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
 }
 
 type Repository struct {
@@ -29,25 +29,25 @@ func NewAuthRepository(pool *pgxpool.Pool) AuthRepository {
 	}
 }
 
-func (r *Repository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	dbUser, err := r.q.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, appErr.ErrNotFound
 		}
-		return nil, fmt.Errorf("get user by email: %w", err)
+		return nil, fmt.Errorf("get model by email: %w", err)
 	}
 	u, err := toDomainFromGetUserByEmailRow(dbUser)
 	if err != nil {
-		return nil, fmt.Errorf("to domain from get user by email row: %w", err)
+		return nil, fmt.Errorf("to domain from get model by email row: %w", err)
 	}
 	return &u, nil
 }
 
-func (r *Repository) CreateIfNotExists(ctx context.Context, email, hash string) (*user.User, error) {
+func (r *Repository) CreateIfNotExists(ctx context.Context, email, hash string) (*model.User, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return &user.User{}, fmt.Errorf("begin tx: %w", err)
+		return &model.User{}, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -58,28 +58,28 @@ func (r *Repository) CreateIfNotExists(ctx context.Context, email, hash string) 
 		PasswordHash: hash,
 	})
 	if err != nil {
-		return &user.User{}, appErr.ErrUserAlreadyExists
+		return &model.User{}, appErr.ErrUserAlreadyExists
 	}
 
-	role, err := qtx.GetRoleByName(ctx, "user")
+	role, err := qtx.GetRoleByName(ctx, "model")
 	if err != nil {
-		return &user.User{}, appErr.ErrRoleNotFound
+		return &model.User{}, appErr.ErrRoleNotFound
 	}
 
 	if err = qtx.CreateUserRole(ctx, db.CreateUserRoleParams{
 		UserID: dbUser.ID,
 		RoleID: role.ID,
 	}); err != nil {
-		return &user.User{}, fmt.Errorf("create user-role: %w", err)
+		return &model.User{}, fmt.Errorf("create model-role: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return &user.User{}, fmt.Errorf("commit: %w", err)
+		return &model.User{}, fmt.Errorf("commit: %w", err)
 	}
 
 	u, err := toDomainFromAuthUserAndRole(dbUser, role)
 	if err != nil {
-		return &user.User{}, err
+		return &model.User{}, err
 	}
 	return &u, nil
 }

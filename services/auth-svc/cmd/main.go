@@ -38,9 +38,10 @@ func main() {
 	defer database.Close()
 	logger.Info().Msg("Connected to database")
 
+	ClientRepo := repository.NewClientRepository(database)
 	authRepo := repository.NewAuthRepository(database)
 	logger.Info().Msg("Auth repository initialized")
-	authService := service.NewAuthService(authRepo, logger, cfg)
+	authService := service.NewAuthService(authRepo, logger, cfg, ClientRepo)
 	logger.Info().Msg("Auth service initialized")
 
 	router := gin.New()

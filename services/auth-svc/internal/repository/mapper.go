@@ -39,3 +39,13 @@ func toDomainFromGetUserByEmailRow(row db.GetUserByEmailRow) (domain.User, error
 		CreatedAt: row.CreatedAt.Time,
 	}, nil
 }
+
+func toDomainFromGetClientById(row db.Client) domain.Client {
+	return domain.Client{
+		ID:        row.ID,
+		Secret:    row.SecretHash,
+		Roles:     row.Roles,
+		Status:    row.Status,
+		CreatedAt: row.CreatedAt.Time,
+	}
+}
