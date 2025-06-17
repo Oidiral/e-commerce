@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/auth-svc/internal/db"
 	"github.com/oidiral/e-commerce/services/auth-svc/internal/handler"
@@ -57,7 +56,9 @@ func main() {
 func SetupLogger(env string) zerolog.Logger {
 	zerolog.TimeFieldFormat = time.RFC3339
 
-	fmt.Println("Logger environment:", env)
+	log.Info().
+		Str("env", env).
+		Msg("Logger environment")
 
 	switch env {
 	case envLocal:

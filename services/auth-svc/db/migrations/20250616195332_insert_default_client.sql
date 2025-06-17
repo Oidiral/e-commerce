@@ -6,5 +6,5 @@ VALUES ('cart-svc', '$2a$10$/98/2JtQb2xICYSPulbh4edAakqw0wFoRYnSt5m3059kogF5nKCM
 
 -- +goose Down
 -- +goose StatementBegin
-DELETE FROM clients WHERE id = 'cart-service';
+DELETE FROM clients WHERE id = 'cart-svc';
 -- +goose StatementEnd

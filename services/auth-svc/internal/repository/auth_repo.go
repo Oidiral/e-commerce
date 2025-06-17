@@ -35,11 +35,11 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*model.User,
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, appErr.ErrNotFound
 		}
-		return nil, fmt.Errorf("get model by email: %w", err)
+		return nil, err
 	}
 	u, err := toDomainFromGetUserByEmailRow(dbUser)
 	if err != nil {
-		return nil, fmt.Errorf("to domain from get model by email row: %w", err)
+		return nil, err
 	}
 	return &u, nil
 }
