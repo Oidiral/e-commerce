@@ -128,8 +128,8 @@ const file_catalog_proto_rawDesc = "" +
 	"\x10CheckoutResponse\x12\x1c\n" +
 	"\tavailable\x18\x01 \x01(\bR\tavailable2J\n" +
 	"\aCatalog\x12?\n" +
-	"\bCheckout\x12\x18.catalog.CheckoutRequest\x1a\x19.catalog.CheckoutResponseB3\n" +
-	"\x1aorg.olzhas.catalogsvc.grpcP\x01Z\x13internal/pb/catalogb\x06proto3"
+	"\bCheckout\x12\x18.catalog.CheckoutRequest\x1a\x19.catalog.CheckoutResponseBc\n" +
+	"\x1aorg.olzhas.catalogsvc.grpcP\x01ZCgithub.com/oidiral/e-commerce/services/cart-svc/internal/pb/catalogb\x06proto3"
 
 var (
 	file_catalog_proto_rawDescOnce sync.Once
