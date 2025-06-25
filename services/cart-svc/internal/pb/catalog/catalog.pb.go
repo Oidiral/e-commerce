@@ -21,6 +21,206 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetQtyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetQtyRequest) Reset() {
+	*x = GetQtyRequest{}
+	mi := &file_catalog_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetQtyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetQtyRequest) ProtoMessage() {}
+
+func (x *GetQtyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetQtyRequest.ProtoReflect.Descriptor instead.
+func (*GetQtyRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetQtyRequest) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+type GetQtyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AvailableQty  int32                  `protobuf:"varint,1,opt,name=available_qty,json=availableQty,proto3" json:"available_qty,omitempty"`
+	ProductId     string                 `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetQtyResponse) Reset() {
+	*x = GetQtyResponse{}
+	mi := &file_catalog_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetQtyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetQtyResponse) ProtoMessage() {}
+
+func (x *GetQtyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetQtyResponse.ProtoReflect.Descriptor instead.
+func (*GetQtyResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetQtyResponse) GetAvailableQty() int32 {
+	if x != nil {
+		return x.AvailableQty
+	}
+	return 0
+}
+
+func (x *GetQtyResponse) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+type GetPriceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPriceRequest) Reset() {
+	*x = GetPriceRequest{}
+	mi := &file_catalog_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPriceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPriceRequest) ProtoMessage() {}
+
+func (x *GetPriceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPriceRequest.ProtoReflect.Descriptor instead.
+func (*GetPriceRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetPriceRequest) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+type GetPriceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Price         float32                `protobuf:"fixed32,1,opt,name=price,proto3" json:"price,omitempty"`
+	Currency      string                 `protobuf:"bytes,2,opt,name=currency,proto3" json:"currency,omitempty"`
+	AvailableQty  int32                  `protobuf:"varint,3,opt,name=available_qty,json=availableQty,proto3" json:"available_qty,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPriceResponse) Reset() {
+	*x = GetPriceResponse{}
+	mi := &file_catalog_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPriceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPriceResponse) ProtoMessage() {}
+
+func (x *GetPriceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPriceResponse.ProtoReflect.Descriptor instead.
+func (*GetPriceResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetPriceResponse) GetPrice() float32 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *GetPriceResponse) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *GetPriceResponse) GetAvailableQty() int32 {
+	if x != nil {
+		return x.AvailableQty
+	}
+	return 0
+}
+
 type CheckoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ItemId        string                 `protobuf:"bytes,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
@@ -31,7 +231,7 @@ type CheckoutRequest struct {
 
 func (x *CheckoutRequest) Reset() {
 	*x = CheckoutRequest{}
-	mi := &file_catalog_proto_msgTypes[0]
+	mi := &file_catalog_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +243,7 @@ func (x *CheckoutRequest) String() string {
 func (*CheckoutRequest) ProtoMessage() {}
 
 func (x *CheckoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[0]
+	mi := &file_catalog_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +256,7 @@ func (x *CheckoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckoutRequest.ProtoReflect.Descriptor instead.
 func (*CheckoutRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{0}
+	return file_catalog_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CheckoutRequest) GetItemId() string {
@@ -82,7 +282,7 @@ type CheckoutResponse struct {
 
 func (x *CheckoutResponse) Reset() {
 	*x = CheckoutResponse{}
-	mi := &file_catalog_proto_msgTypes[1]
+	mi := &file_catalog_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +294,7 @@ func (x *CheckoutResponse) String() string {
 func (*CheckoutResponse) ProtoMessage() {}
 
 func (x *CheckoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[1]
+	mi := &file_catalog_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +307,7 @@ func (x *CheckoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckoutResponse.ProtoReflect.Descriptor instead.
 func (*CheckoutResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{1}
+	return file_catalog_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CheckoutResponse) GetAvailable() bool {
@@ -121,14 +321,30 @@ var File_catalog_proto protoreflect.FileDescriptor
 
 const file_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\rcatalog.proto\x12\acatalog\"F\n" +
+	"\rcatalog.proto\x12\acatalog\".\n" +
+	"\rGetQtyRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\"T\n" +
+	"\x0eGetQtyResponse\x12#\n" +
+	"\ravailable_qty\x18\x01 \x01(\x05R\favailableQty\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\tR\tproductId\"0\n" +
+	"\x0fGetPriceRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\"i\n" +
+	"\x10GetPriceResponse\x12\x14\n" +
+	"\x05price\x18\x01 \x01(\x02R\x05price\x12\x1a\n" +
+	"\bcurrency\x18\x02 \x01(\tR\bcurrency\x12#\n" +
+	"\ravailable_qty\x18\x03 \x01(\x05R\favailableQty\"F\n" +
 	"\x0fCheckoutRequest\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\tR\x06itemId\x12\x1a\n" +
 	"\bquantity\x18\x02 \x01(\x05R\bquantity\"0\n" +
 	"\x10CheckoutResponse\x12\x1c\n" +
-	"\tavailable\x18\x01 \x01(\bR\tavailable2J\n" +
+	"\tavailable\x18\x01 \x01(\bR\tavailable2\xcd\x01\n" +
 	"\aCatalog\x12?\n" +
-	"\bCheckout\x12\x18.catalog.CheckoutRequest\x1a\x19.catalog.CheckoutResponseBc\n" +
+	"\bCheckout\x12\x18.catalog.CheckoutRequest\x1a\x19.catalog.CheckoutResponse\x12F\n" +
+	"\x0fGetPriceWithQty\x12\x18.catalog.GetPriceRequest\x1a\x19.catalog.GetPriceResponse\x129\n" +
+	"\x06GetQty\x12\x16.catalog.GetQtyRequest\x1a\x17.catalog.GetQtyResponseBc\n" +
 	"\x1aorg.olzhas.catalogsvc.grpcP\x01ZCgithub.com/oidiral/e-commerce/services/cart-svc/internal/pb/catalogb\x06proto3"
 
 var (
@@ -143,16 +359,24 @@ func file_catalog_proto_rawDescGZIP() []byte {
 	return file_catalog_proto_rawDescData
 }
 
-var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_catalog_proto_goTypes = []any{
-	(*CheckoutRequest)(nil),  // 0: catalog.CheckoutRequest
-	(*CheckoutResponse)(nil), // 1: catalog.CheckoutResponse
+	(*GetQtyRequest)(nil),    // 0: catalog.GetQtyRequest
+	(*GetQtyResponse)(nil),   // 1: catalog.GetQtyResponse
+	(*GetPriceRequest)(nil),  // 2: catalog.GetPriceRequest
+	(*GetPriceResponse)(nil), // 3: catalog.GetPriceResponse
+	(*CheckoutRequest)(nil),  // 4: catalog.CheckoutRequest
+	(*CheckoutResponse)(nil), // 5: catalog.CheckoutResponse
 }
 var file_catalog_proto_depIdxs = []int32{
-	0, // 0: catalog.Catalog.Checkout:input_type -> catalog.CheckoutRequest
-	1, // 1: catalog.Catalog.Checkout:output_type -> catalog.CheckoutResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	4, // 0: catalog.Catalog.Checkout:input_type -> catalog.CheckoutRequest
+	2, // 1: catalog.Catalog.GetPriceWithQty:input_type -> catalog.GetPriceRequest
+	0, // 2: catalog.Catalog.GetQty:input_type -> catalog.GetQtyRequest
+	5, // 3: catalog.Catalog.Checkout:output_type -> catalog.CheckoutResponse
+	3, // 4: catalog.Catalog.GetPriceWithQty:output_type -> catalog.GetPriceResponse
+	1, // 5: catalog.Catalog.GetQty:output_type -> catalog.GetQtyResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -169,7 +393,7 @@ func file_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_proto_rawDesc), len(file_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

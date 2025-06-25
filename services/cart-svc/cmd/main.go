@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/cart-svc/config"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/authclient"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/controller"
 	middleware "github.com/oidiral/e-commerce/services/cart-svc/internal/controller/middleware"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/db"
+	grpcx "github.com/oidiral/e-commerce/services/cart-svc/internal/grpc"
+	"github.com/oidiral/e-commerce/services/cart-svc/internal/pb/catalog"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/repository/postgres"
 	"github.com/oidiral/e-commerce/services/cart-svc/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"os"
 	"time"
 )
@@ -40,8 +45,14 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to connect to redis")
 	}
 
+	authClie := authclient.NewClient(cfg.AuthURL, cfg.ClientID, cfg.ClientSecret)
 	cartRepo := postgres.NewCartRepoPg(database)
-	cartService := service.NewCartService(cartRepo, logger, redisClient)
+	conn, err := grpc.NewClient(cfg.CatalogGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithPerRPCCredentials(grpcx.NewJWTPerRPCCreds(authClie)))
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to connect to catalog service")
+	}
+	catalogClient := catalog.NewCatalogClient(conn)
+	cartService := service.NewCartService(cartRepo, logger, redisClient, catalogClient)
 
 	router := gin.New()
 	router.Use(gin.Recovery())

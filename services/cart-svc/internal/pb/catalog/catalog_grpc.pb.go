@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Catalog_Checkout_FullMethodName = "/catalog.Catalog/Checkout"
+	Catalog_Checkout_FullMethodName        = "/catalog.Catalog/Checkout"
+	Catalog_GetPriceWithQty_FullMethodName = "/catalog.Catalog/GetPriceWithQty"
+	Catalog_GetQty_FullMethodName          = "/catalog.Catalog/GetQty"
 )
 
 // CatalogClient is the client API for Catalog service.
@@ -27,6 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CatalogClient interface {
 	Checkout(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error)
+	GetPriceWithQty(ctx context.Context, in *GetPriceRequest, opts ...grpc.CallOption) (*GetPriceResponse, error)
+	GetQty(ctx context.Context, in *GetQtyRequest, opts ...grpc.CallOption) (*GetQtyResponse, error)
 }
 
 type catalogClient struct {
@@ -47,11 +51,33 @@ func (c *catalogClient) Checkout(ctx context.Context, in *CheckoutRequest, opts 
 	return out, nil
 }
 
+func (c *catalogClient) GetPriceWithQty(ctx context.Context, in *GetPriceRequest, opts ...grpc.CallOption) (*GetPriceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPriceResponse)
+	err := c.cc.Invoke(ctx, Catalog_GetPriceWithQty_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogClient) GetQty(ctx context.Context, in *GetQtyRequest, opts ...grpc.CallOption) (*GetQtyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetQtyResponse)
+	err := c.cc.Invoke(ctx, Catalog_GetQty_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServer is the server API for Catalog service.
 // All implementations must embed UnimplementedCatalogServer
 // for forward compatibility.
 type CatalogServer interface {
 	Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
+	GetPriceWithQty(context.Context, *GetPriceRequest) (*GetPriceResponse, error)
+	GetQty(context.Context, *GetQtyRequest) (*GetQtyResponse, error)
 	mustEmbedUnimplementedCatalogServer()
 }
 
@@ -64,6 +90,12 @@ type UnimplementedCatalogServer struct{}
 
 func (UnimplementedCatalogServer) Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Checkout not implemented")
+}
+func (UnimplementedCatalogServer) GetPriceWithQty(context.Context, *GetPriceRequest) (*GetPriceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPriceWithQty not implemented")
+}
+func (UnimplementedCatalogServer) GetQty(context.Context, *GetQtyRequest) (*GetQtyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQty not implemented")
 }
 func (UnimplementedCatalogServer) mustEmbedUnimplementedCatalogServer() {}
 func (UnimplementedCatalogServer) testEmbeddedByValue()                 {}
@@ -104,6 +136,42 @@ func _Catalog_Checkout_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Catalog_GetPriceWithQty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPriceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServer).GetPriceWithQty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Catalog_GetPriceWithQty_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServer).GetPriceWithQty(ctx, req.(*GetPriceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Catalog_GetQty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQtyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServer).GetQty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Catalog_GetQty_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServer).GetQty(ctx, req.(*GetQtyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Catalog_ServiceDesc is the grpc.ServiceDesc for Catalog service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +182,14 @@ var Catalog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Checkout",
 			Handler:    _Catalog_Checkout_Handler,
+		},
+		{
+			MethodName: "GetPriceWithQty",
+			Handler:    _Catalog_GetPriceWithQty_Handler,
+		},
+		{
+			MethodName: "GetQty",
+			Handler:    _Catalog_GetQty_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

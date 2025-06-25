@@ -8,10 +8,14 @@ import (
 )
 
 type Config struct {
-	Env      string         `mapstructure:"cart_env"`
-	Server   ServerConfig   `mapstructure:",squash"`
-	Database DatabaseConfig `mapstructure:",squash"`
-	Redis    Redis          `mapstructure:",squash"`
+	Env             string         `mapstructure:"cart_env"`
+	Server          ServerConfig   `mapstructure:",squash"`
+	Database        DatabaseConfig `mapstructure:",squash"`
+	Redis           Redis          `mapstructure:",squash"`
+	CatalogGRPCAddr string         `mapstructure:"catalog_grpc_addr"`
+	AuthURL         string         `mapstructure:"auth_url"`
+	ClientID        string         `mapstructure:"client_id"`
+	ClientSecret    string         `mapstructure:"client_secret"`
 }
 
 type ServerConfig struct {
@@ -61,7 +65,10 @@ func LoadConfig() (*Config, error) {
 	_ = viper.BindEnv("cart_db_conn_timeout", "CART_DB_CONN_TIMEOUT")
 	_ = viper.BindEnv("cart_redis_host", "CART_REDIS_HOST")
 	_ = viper.BindEnv("cart_redis_password", "CART_REDIS_PASSWORD")
-
+	_ = viper.BindEnv("catalog_grpc_addr", "CATALOG_GRPC_ADDR")
+	_ = viper.BindEnv("auth_url", "AUTH_URL")
+	_ = viper.BindEnv("client_id", "CLIENT_ID")
+	_ = viper.BindEnv("client_secret", "CLIENT_SECRET")
 	viper.AutomaticEnv()
 
 	var cfg Config
@@ -74,6 +81,9 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.Database.MaxOpenConns < 1 || cfg.Database.MaxIdleConns < 1 {
 		return nil, fmt.Errorf("CART_DB_MAX_OPEN_CONNS and CART_DB_MAX_IDLE_CONNS must be >= 1")
+	}
+	if cfg.AuthURL == "" || cfg.ClientID == "" || cfg.ClientSecret == "" {
+		return nil, fmt.Errorf("AUTH_URL, CLIENT_ID and CLIENT_SECRET must be set")
 	}
 
 	return &cfg, nil
