@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -33,16 +32,14 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret          string        `mapstructure:"auth_jwt_secret"`
+	PrivateKeyPath  string        `mapstructure:"auth_jwt_private_key"`
+	PublicKeyPath   string        `mapstructure:"auth_jwt_public_key"`
+	KeyID           string        `mapstructure:"auth_jwt_kid"`
 	AccessTokenTTL  time.Duration `mapstructure:"auth_jwt_access_token_ttl"`
 	RefreshTokenTTL time.Duration `mapstructure:"auth_jwt_refresh_token_ttl"`
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(".env"); err != nil {
-		fmt.Println("warning: .env file not found or cannot be read, relying on system environment variables")
-	}
-
 	if err := viper.BindEnv("auth_env", "AUTH_ENV"); err != nil {
 		return nil, fmt.Errorf("BindEnv AUTH_ENV: %w", err)
 	}
@@ -61,7 +58,9 @@ func LoadConfig() (*Config, error) {
 	_ = viper.BindEnv("auth_db_max_idle_conns", "AUTH_DB_MAX_IDLE_CONNS")
 	_ = viper.BindEnv("auth_db_conn_timeout", "AUTH_DB_CONN_TIMEOUT")
 
-	_ = viper.BindEnv("auth_jwt_secret", "AUTH_JWT_SECRET")
+	_ = viper.BindEnv("auth_jwt_private_key", "AUTH_JWT_PRIVATE_KEY")
+	_ = viper.BindEnv("auth_jwt_public_key", "AUTH_JWT_PUBLIC_KEY")
+	_ = viper.BindEnv("auth_jwt_kid", "AUTH_JWT_KID")
 	_ = viper.BindEnv("auth_jwt_access_token_ttl", "AUTH_JWT_ACCESS_TOKEN_TTL")
 	_ = viper.BindEnv("auth_jwt_refresh_token_ttl", "AUTH_JWT_REFRESH_TOKEN_TTL")
 
@@ -78,9 +77,8 @@ func LoadConfig() (*Config, error) {
 	if cfg.Database.MaxOpenConns < 1 || cfg.Database.MaxIdleConns < 1 {
 		return nil, fmt.Errorf("AUTH_DB_MAX_OPEN_CONNS and AUTH_DB_MAX_IDLE_CONNS must be >= 1")
 	}
-	if cfg.JWT.Secret == "" {
-		return nil, fmt.Errorf("AUTH_JWT_SECRET must be set")
+	if cfg.JWT.PrivateKeyPath == "" || cfg.JWT.PublicKeyPath == "" || cfg.JWT.KeyID == "" {
+		return nil, fmt.Errorf("AUTH_JWT_PRIVATE_KEY, AUTH_JWT_PUBLIC_KEY and AUTH_JWT_KID must be set")
 	}
-
 	return &cfg, nil
 }

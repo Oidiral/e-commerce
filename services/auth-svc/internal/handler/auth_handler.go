@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/oidiral/e-commerce/services/auth-svc/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,10 +14,15 @@ import (
 
 type AuthHandler struct {
 	svc *service.AuthService
+	cfg *config.Config
 }
 
-func NewAuthHandler(svc *service.AuthService) *AuthHandler {
-	return &AuthHandler{svc: svc}
+func NewAuthHandler(svc *service.AuthService, cfg *config.Config) *AuthHandler {
+	return &AuthHandler{svc: svc, cfg: cfg}
+}
+
+func (h *AuthHandler) JWKS(ctx *gin.Context) {
+	ctx.Data(http.StatusOK, "application/json", h.svc.JWKS())
 }
 
 func (h *AuthHandler) Register(ctx *gin.Context) {
@@ -107,5 +113,4 @@ func (h *AuthHandler) ClientToken(ctx *gin.Context) {
 		}
 	}
 	ctx.JSON(http.StatusOK, tokens)
-
 }

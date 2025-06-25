@@ -34,7 +34,6 @@ func main() {
 
 	logger := SetupLogger(cfg.Env)
 	logger.Info().Msg("Auth service started")
-
 	database, err := db.NewPool(cfg)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to connect to database")
@@ -47,11 +46,11 @@ func main() {
 	logger.Info().Msg("Auth repository initialized")
 	authService := service.NewAuthService(authRepo, logger, cfg, ClientRepo)
 	logger.Info().Msg("Auth service initialized")
-
+	logger.Info().Msg("db_name" + ": " + cfg.Database.Name)
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(middleware.LoggingMiddleware(logger))
-	handler.RegisterRoutes(router, authService)
+	handler.RegisterRoutes(router, authService, cfg)
 	logger.Info().Msg("Routes registered")
 	srv := &http.Server{
 		Addr:    cfg.Server.Port,
