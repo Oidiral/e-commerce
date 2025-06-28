@@ -51,7 +51,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	if err := h.svc.AddItem(c.Request.Context(), cartID, req.ProductID, req.Price, req.Qty); err != nil {
+	if err := h.svc.AddItem(c.Request.Context(), cartID, req.ProductID, req.Qty); err != nil {
 		HandleError(c, err)
 		return
 	}
