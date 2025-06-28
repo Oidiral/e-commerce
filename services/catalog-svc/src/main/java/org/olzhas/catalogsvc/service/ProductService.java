@@ -11,6 +11,7 @@ public interface ProductService {
     PageResponse<ProductDto> findAll(Pageable pageable);
     ProductDto getById(UUID id);
     InternalProductDto getWithQuantity(UUID id);
+    ProductInventoryPriceDto getWithQuantityAndPrice(UUID id);
     PageResponse<ProductDto> search(ProductFilter filter, Pageable pageable);
     List<ProductImageDto> getImages(UUID productId);
     void reserve(UUID id, int quantity);

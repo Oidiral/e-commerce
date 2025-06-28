@@ -8,8 +8,11 @@ import org.olzhas.catalogsvc.exceptionHandler.NotFoundException;
 import org.olzhas.catalogsvc.mapper.ProductImageMapper;
 import org.olzhas.catalogsvc.mapper.ProductMapper;
 import org.olzhas.catalogsvc.model.Product;
+import org.olzhas.catalogsvc.model.ProductInventory;
+import org.olzhas.catalogsvc.model.ProductPrice;
 import org.olzhas.catalogsvc.repository.ProductImageRepository;
 import org.olzhas.catalogsvc.repository.ProductInventoryRepository;
+import org.olzhas.catalogsvc.repository.ProductPriceRepository;
 import org.olzhas.catalogsvc.repository.ProductRepository;
 import org.olzhas.catalogsvc.repository.spec.ProductSpecificationBuilder;
 import org.olzhas.catalogsvc.service.ProductService;
@@ -34,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageRepository productImageRepository;
     private final ProductImageMapper productImageMapper;
     private final ProductInventoryRepository productInventoryRepository;
+    private final ProductPriceRepository productPriceRepository;
 
     @Override
     public PageResponse<ProductDto> findAll(Pageable pageable) {
@@ -52,13 +56,25 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public InternalProductDto getWithQuantity(UUID id) {
-        return productRepository.findInternalInfo(id)
+        return productRepository.findProductInfoBasic(id)
                 .map(info -> new InternalProductDto(
                         info.getProductId(),
                         info.getName(),
                         info.getLatestPrice(),
                         info.getQuantity()))
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
+    }
+
+    @Override
+    public ProductInventoryPriceDto getWithQuantityAndPrice(UUID id) {
+        return productRepository.findProductInfoWithCurrency(id)
+                .map(info -> new ProductInventoryPriceDto(
+                                info.getProductId().toString(),
+                                info.getQuantity(),
+                                info.getCurrency(),
+                                info.getLatestPrice()
+                        )
+                ).orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
     }
 
     @Override
@@ -105,6 +121,20 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductDto create(@Valid ProductCreateReq req) {
         Product product = productMapper.toEntity(req);
+        if (req.getPrice() != null) {
+            ProductPrice price = new ProductPrice();
+            price.setProduct(product);
+            price.setAmount(req.getPrice());
+            productPriceRepository.save(price);
+        }
+
+        if (req.getQuantity() != null) {
+            ProductInventory inventory = new ProductInventory();
+            inventory.setId(product.getId());
+            inventory.setProduct(product);
+            inventory.setQuantity(req.getQuantity());
+            productInventoryRepository.save(inventory);
+        }
         productRepository.save(product);
         return productMapper.toDto(product);
     }

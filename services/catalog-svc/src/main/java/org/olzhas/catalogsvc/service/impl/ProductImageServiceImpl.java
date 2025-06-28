@@ -8,20 +8,20 @@ import lombok.RequiredArgsConstructor;
 import org.olzhas.catalogsvc.config.MinioProperties;
 import org.olzhas.catalogsvc.dto.ProductImageDto;
 import org.olzhas.catalogsvc.exceptionHandler.NotFoundException;
+import org.olzhas.catalogsvc.exceptionHandler.StorageException;
 import org.olzhas.catalogsvc.mapper.ProductImageMapper;
 import org.olzhas.catalogsvc.model.Product;
 import org.olzhas.catalogsvc.model.ProductImage;
 import org.olzhas.catalogsvc.repository.ProductImageRepository;
 import org.olzhas.catalogsvc.repository.ProductRepository;
 import org.olzhas.catalogsvc.service.ImageService;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,7 +36,7 @@ public class ProductImageServiceImpl implements ImageService {
 
     @Override
     @Transactional
-    public List<ProductImageDto> upload(UUID productId, MultipartFile file, boolean primary) {
+    public ProductImageDto upload(UUID productId, MultipartFile file, boolean primary) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
         String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
@@ -49,7 +49,7 @@ public class ProductImageServiceImpl implements ImageService {
                             .contentType(file.getContentType())
                             .build());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload image", e);
+            throw new StorageException("Failed to upload image", e);
         }
         ProductImage image = new ProductImage();
         image.setProduct(product);
@@ -57,7 +57,7 @@ public class ProductImageServiceImpl implements ImageService {
         image.setUrl(properties.getUrl() + "/" + properties.getBucket() + "/" + objectName);
         image.setIsPrimary(primary);
         ProductImage saved = productImageRepository.save(image);
-        return List.of(productImageMapper.toDto(saved));
+        return productImageMapper.toDto(saved);
     }
 
     @Override
@@ -65,15 +65,15 @@ public class ProductImageServiceImpl implements ImageService {
     public Resource download(UUID imageId) {
         ProductImage image = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new NotFoundException("Image not found with id: " + imageId));
-        try {
-            InputStream stream = minioClient.getObject(
-                    GetObjectArgs.builder()
-                            .bucket(properties.getBucket())
-                            .object(image.getS3Key())
-                            .build());
-            return new InputStreamResource(stream);
+        try (InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(properties.getBucket())
+                        .object(image.getS3Key())
+                        .build())) {
+            byte[] data = stream.readAllBytes();
+            return new ByteArrayResource(data);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to download image", e);
+            throw new StorageException("Failed to download image", e);
         }
     }
 
@@ -90,7 +90,7 @@ public class ProductImageServiceImpl implements ImageService {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete file from S3", e);
+            throw new StorageException("Failed to delete file from S3", e);
         }
         productImageRepository.delete(image);
     }

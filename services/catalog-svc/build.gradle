@@ -46,10 +46,13 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    runtimeOnly 'io.grpc:grpc-netty-shaded:1.73.0'
-    implementation 'io.grpc:grpc-protobuf:1.73.0'
-    implementation 'io.grpc:grpc-stub:1.73.0'
-    compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+    implementation platform("io.grpc:grpc-bom:1.73.0")
+    // https://mvnrepository.com/artifact/org.springframework.grpc/spring-grpc-spring-boot-starter
+    implementation 'org.springframework.grpc:spring-grpc-spring-boot-starter:0.8.0'
+    implementation 'io.grpc:grpc-stub'
+    implementation 'io.grpc:grpc-protobuf'
+    implementation 'io.grpc:grpc-netty-shaded'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
 
 
 }

@@ -1,10 +1,6 @@
 package org.olzhas.catalogsvc.service.impl;
 
-import io.minio.GetObjectArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
-import io.minio.GetObjectResponse;
+import io.minio.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,18 +15,16 @@ import org.olzhas.catalogsvc.model.Product;
 import org.olzhas.catalogsvc.model.ProductImage;
 import org.olzhas.catalogsvc.repository.ProductImageRepository;
 import org.olzhas.catalogsvc.repository.ProductRepository;
-import org.olzhas.catalogsvc.service.impl.ProductImageServiceImpl;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,10 +64,9 @@ class ProductImageServiceImplTest {
         ProductImageDto dto = new ProductImageDto(UUID.randomUUID(), "url", true);
         when(productImageMapper.toDto(any(ProductImage.class))).thenReturn(dto);
 
-        List<ProductImageDto> result = productImageService.upload(productId, multipartFile, true);
+        ProductImageDto result = productImageService.upload(productId, multipartFile, true);
 
-        assertEquals(1, result.size());
-        assertSame(dto, result.getFirst());
+        assertSame(dto, result);
         verify(minioClient).putObject(any(PutObjectArgs.class));
         ArgumentCaptor<ProductImage> captor = ArgumentCaptor.forClass(ProductImage.class);
         verify(productImageRepository).save(captor.capture());
@@ -101,6 +94,7 @@ class ProductImageServiceImplTest {
         when(productImageRepository.findById(imageId)).thenReturn(Optional.of(image));
         when(properties.getBucket()).thenReturn("bucket");
         GetObjectResponse response = mock(GetObjectResponse.class);
+        when(response.readAllBytes()).thenReturn("data".getBytes());
         when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(response);
 
         Resource res = productImageService.download(imageId);

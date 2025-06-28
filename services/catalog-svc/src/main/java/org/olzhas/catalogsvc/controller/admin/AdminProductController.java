@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -58,7 +57,7 @@ public class AdminProductController {
     @PostMapping(
             value = "/{id}/images",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public List<ProductImageDto> uploadImage(
+    public ProductImageDto uploadImage(
             @PathVariable UUID id,
             @RequestPart MultipartFile file,
             @RequestParam(defaultValue = "false") boolean primary) {
