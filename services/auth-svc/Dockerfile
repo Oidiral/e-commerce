@@ -14,11 +14,15 @@ FROM alpine:3.18 AS runtime
 RUN apk add --no-cache ca-certificates postgresql-client
 
 COPY --from=builder /go/bin/goose /usr/local/bin/goose
-COPY --from=builder /app/auth /usr/local/bin/auth
-COPY --from=builder /app/db/migrations /db/migrations
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+WORKDIR /app
+
+COPY --from=builder /app/auth ./auth
+COPY --from=builder /app/db/migrations ./db/migrations
+COPY entrypoint.sh ./entrypoint.sh
+
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
 EXPOSE 8080
