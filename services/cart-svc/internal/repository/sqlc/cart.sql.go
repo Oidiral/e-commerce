@@ -11,20 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
-const createCartIfNotExists = `-- name: CreateCartIfNotExists :one
-INSERT INTO cart(id, user_id, status)
-VALUES ($1, $2, 'OPEN')
-ON CONFLICT (id) DO NOTHING
+const createCart = `-- name: CreateCart :one
+INSERT INTO cart(user_id, status)
+VALUES ($1, 'OPEN')
+ON CONFLICT (user_id) DO NOTHING
 RETURNING id, user_id, status, created_at, updated_at
 `
 
-type CreateCartIfNotExistsParams struct {
-	ID     uuid.UUID
-	UserID uuid.UUID
-}
-
-func (q *Queries) CreateCartIfNotExists(ctx context.Context, arg CreateCartIfNotExistsParams) (Cart, error) {
-	row := q.db.QueryRow(ctx, createCartIfNotExists, arg.ID, arg.UserID)
+func (q *Queries) CreateCart(ctx context.Context, userID uuid.UUID) (Cart, error) {
+	row := q.db.QueryRow(ctx, createCart, userID)
 	var i Cart
 	err := row.Scan(
 		&i.ID,
@@ -96,6 +91,33 @@ WHERE id = $1
 
 func (q *Queries) GetCart(ctx context.Context, id uuid.UUID) (Cart, error) {
 	row := q.db.QueryRow(ctx, getCart, id)
+	var i Cart
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getCartByUser = `-- name: GetCartByUser :one
+SELECT
+  id,
+  user_id,
+  status,
+  created_at,
+  updated_at
+FROM cart
+WHERE user_id = $1
+  AND status IN ('OPEN', 'CHECKOUT')
+ORDER BY updated_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetCartByUser(ctx context.Context, userID uuid.UUID) (Cart, error) {
+	row := q.db.QueryRow(ctx, getCartByUser, userID)
 	var i Cart
 	err := row.Scan(
 		&i.ID,

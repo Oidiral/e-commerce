@@ -9,10 +9,10 @@ func RegisterRoutes(router *gin.Engine, svc service.CartService) {
 	h := NewCartHandler(svc)
 	api := router.Group("/api/v1/cart")
 	{
-		api.GET("/:id", h.GetCart)
-		api.POST("/:id/items", h.AddItem)
-		api.PUT("/:id/items/:product_id", h.ChangeQty)
-		api.DELETE("/:id/items/:product_id", h.RemoveItem)
-		api.DELETE("/:id/items", h.Clear)
+		api.GET("/:user_id", h.GetCart)
+		api.POST("/:user_id/items", h.AddItem)
+		api.PUT("/:user_id/items/:product_id", h.ChangeQty)
+		api.DELETE("/:user_id/items/:product_id", h.RemoveItem)
+		api.DELETE("/:user_id/items", h.Clear)
 	}
 }

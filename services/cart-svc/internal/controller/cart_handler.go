@@ -27,12 +27,12 @@ type ChangeQtyRequest struct {
 }
 
 func (h *CartHandler) GetCart(c *gin.Context) {
-	cartID, err := uuid.Parse(c.Param("id"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	cart, err := h.svc.GetCart(c.Request.Context(), cartID)
+	cart, err := h.svc.GetCart(c.Request.Context(), userID)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -41,7 +41,7 @@ func (h *CartHandler) GetCart(c *gin.Context) {
 }
 
 func (h *CartHandler) AddItem(c *gin.Context) {
-	cartID, err := uuid.Parse(c.Param("id"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		HandleError(c, service.ErrBadRequest)
 		return
@@ -51,7 +51,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	if err := h.svc.AddItem(c.Request.Context(), cartID, req.ProductID, req.Qty); err != nil {
+	if err := h.svc.AddItem(c.Request.Context(), userID, req.ProductID, req.Qty); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -59,7 +59,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 }
 
 func (h *CartHandler) ChangeQty(c *gin.Context) {
-	cartID, err := uuid.Parse(c.Param("id"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		HandleError(c, service.ErrBadRequest)
 		return
@@ -74,7 +74,7 @@ func (h *CartHandler) ChangeQty(c *gin.Context) {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	if err := h.svc.ChangeQty(c.Request.Context(), cartID, productID, req.Qty); err != nil {
+	if err := h.svc.ChangeQty(c.Request.Context(), userID, productID, req.Qty); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -82,7 +82,7 @@ func (h *CartHandler) ChangeQty(c *gin.Context) {
 }
 
 func (h *CartHandler) RemoveItem(c *gin.Context) {
-	cartID, err := uuid.Parse(c.Param("id"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		HandleError(c, service.ErrBadRequest)
 		return
@@ -92,7 +92,7 @@ func (h *CartHandler) RemoveItem(c *gin.Context) {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	if err := h.svc.RemoveItem(c.Request.Context(), cartID, productID); err != nil {
+	if err := h.svc.RemoveItem(c.Request.Context(), userID, productID); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -100,12 +100,12 @@ func (h *CartHandler) RemoveItem(c *gin.Context) {
 }
 
 func (h *CartHandler) Clear(c *gin.Context) {
-	cartID, err := uuid.Parse(c.Param("id"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		HandleError(c, service.ErrBadRequest)
 		return
 	}
-	if err := h.svc.Clear(c.Request.Context(), cartID); err != nil {
+	if err := h.svc.Clear(c.Request.Context(), userID); err != nil {
 		HandleError(c, err)
 		return
 	}

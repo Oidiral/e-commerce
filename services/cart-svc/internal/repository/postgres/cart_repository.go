@@ -21,6 +21,8 @@ var (
 
 type CartRepository interface {
 	Get(ctx context.Context, cartID uuid.UUID) (*model.Cart, error)
+	GetByUser(ctx context.Context, userID uuid.UUID) (*model.Cart, error)
+	Create(ctx context.Context, userID uuid.UUID) (*model.Cart, error)
 	ChangeQuantity(ctx context.Context, cartID, productID uuid.UUID, qty int) error
 	UpsertItem(ctx context.Context, cartID, productID uuid.UUID, price float64, qty int) error
 	DeleteItem(ctx context.Context, cartID, productID uuid.UUID) error
@@ -49,6 +51,27 @@ func (r *cartRepoPg) Get(ctx context.Context, cartID uuid.UUID) (*model.Cart, er
 		return nil, mapPgErr(err)
 	}
 	return mapCartToDomain(dbCart, dbItems), nil
+}
+
+func (r *cartRepoPg) GetByUser(ctx context.Context, userID uuid.UUID) (*model.Cart, error) {
+	dbCart, err := r.q.GetCartByUser(ctx, userID)
+	if err != nil {
+		return nil, mapPgErr(err)
+	}
+	dbItems, err := r.q.ListItems(ctx, dbCart.ID)
+	if err != nil {
+		return nil, mapPgErr(err)
+	}
+	return mapCartToDomain(dbCart, dbItems), nil
+}
+
+func (r *cartRepoPg) Create(ctx context.Context, userID uuid.UUID) (*model.Cart, error) {
+	c, err := r.q.CreateCart(ctx, userID)
+	if err != nil {
+		return nil, mapPgErr(err)
+	}
+	return mapCartToDomain(c, []db.CartItem{}), nil
+
 }
 
 func (r *cartRepoPg) UpsertItem(ctx context.Context, cartID, productID uuid.UUID, price float64, qty int) error {

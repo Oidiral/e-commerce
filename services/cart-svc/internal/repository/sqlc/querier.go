@@ -11,11 +11,12 @@ import (
 )
 
 type Querier interface {
-	CreateCartIfNotExists(ctx context.Context, arg CreateCartIfNotExistsParams) (Cart, error)
+	CreateCart(ctx context.Context, userID uuid.UUID) (Cart, error)
 	DeleteCart(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteCartItem(ctx context.Context, arg DeleteCartItemParams) (int64, error)
 	DeleteExpiredCarts(ctx context.Context) (int64, error)
 	GetCart(ctx context.Context, id uuid.UUID) (Cart, error)
+	GetCartByUser(ctx context.Context, userID uuid.UUID) (Cart, error)
 	ListItems(ctx context.Context, cartID uuid.UUID) ([]CartItem, error)
 	UpdateCartStatus(ctx context.Context, arg UpdateCartStatusParams) error
 	UpdateQuantity(ctx context.Context, arg UpdateQuantityParams) (int64, error)

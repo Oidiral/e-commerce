@@ -1,7 +1,7 @@
--- name: CreateCartIfNotExists :one
-INSERT INTO cart(id, user_id, status)
-VALUES ($1, $2, 'OPEN')
-ON CONFLICT (id) DO NOTHING
+-- name: CreateCart :one
+INSERT INTO cart(user_id, status)
+VALUES ($1, 'OPEN')
+ON CONFLICT (user_id) DO NOTHING
 RETURNING *;
 
 -- name: GetCart :one
@@ -14,6 +14,19 @@ SELECT
 FROM cart
 WHERE id = $1
   AND status IN ('OPEN', 'CHECKOUT');
+
+-- name: GetCartByUser :one
+SELECT
+  id,
+  user_id,
+  status,
+  created_at,
+  updated_at
+FROM cart
+WHERE user_id = $1
+  AND status IN ('OPEN', 'CHECKOUT')
+ORDER BY updated_at DESC
+LIMIT 1;
 
 -- name: ListItems :many
 SELECT

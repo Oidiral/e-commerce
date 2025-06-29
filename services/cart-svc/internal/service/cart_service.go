@@ -29,12 +29,12 @@ const (
 )
 
 type CartService interface {
-	GetCart(ctx context.Context, cartID uuid.UUID) (*model.Cart, error)
-	AddItem(ctx context.Context, cartID, productID uuid.UUID, qty int) error
-	ChangeQty(ctx context.Context, cartID, productID uuid.UUID, qty int) error
-	RemoveItem(ctx context.Context, cartID, productID uuid.UUID) error
-	Clear(ctx context.Context, cartID uuid.UUID) error
-	Checkout(ctx context.Context, cartID uuid.UUID) error
+	GetCart(ctx context.Context, userID uuid.UUID) (*model.Cart, error)
+	AddItem(ctx context.Context, userID, productID uuid.UUID, qty int) error
+	ChangeQty(ctx context.Context, userID, productID uuid.UUID, qty int) error
+	RemoveItem(ctx context.Context, userID, productID uuid.UUID) error
+	Clear(ctx context.Context, userID uuid.UUID) error
+	Checkout(ctx context.Context, userID uuid.UUID) error
 }
 
 type CartSvc struct {
@@ -48,38 +48,38 @@ func NewCartService(dbRepo postgres.CartRepository, logger zerolog.Logger, rdb *
 	return &CartSvc{db: dbRepo, log: logger, rds: rdb.Client, catalogClient: catClient}
 }
 
-func (s *CartSvc) GetCart(ctx context.Context, cartID uuid.UUID) (*model.Cart, error) {
-	key := s.cacheKey(cartID)
+func (s *CartSvc) GetCart(ctx context.Context, userID uuid.UUID) (*model.Cart, error) {
+	key := s.cacheKey(userID)
 	raw, err := s.rds.Get(ctx, key).Result()
 	if err == nil {
 		var cart model.Cart
 		if json.Unmarshal([]byte(raw), &cart) == nil {
-			s.log.Info().Str("cart_id", cartID.String()).Msg("cache hit for cart")
+			s.log.Info().Str("user_id", userID.String()).Msg("cache hit for cart")
 			return &cart, nil
 		}
-		s.log.Warn().Str("cart_id", cartID.String()).Msg("failed to unmarshal cached cart, fallback to DB")
+		s.log.Warn().Str("user_id", userID.String()).Msg("failed to unmarshal cached cart, fallback to DB")
 	} else if !errors.Is(err, redis.Nil) {
-		s.log.Warn().Err(err).Str("cart_id", cartID.String()).Msg("redis GET error, fallback to DB")
+		s.log.Warn().Err(err).Str("user_id", userID.String()).Msg("redis GET error, fallback to DB")
 	}
-	cart, err := s.db.Get(ctx, cartID)
+	cart, err := s.db.GetByUser(ctx, userID)
 	switch {
 	case errors.Is(err, postgres.ErrCartNotFound):
-		s.log.Warn().Str("cart_id", cartID.String()).Msg("cart not found")
+		s.log.Warn().Str("user_id", userID.String()).Msg("cart not found")
 		return nil, ErrNotFound
 	case err != nil:
-		s.log.Error().Err(err).Str("cart_id", cartID.String()).Msg("db GetCart failed")
+		s.log.Error().Err(err).Str("user_id", userID.String()).Msg("db GetCart failed")
 		return nil, ErrInternal
 	}
-	s.log.Info().Str("cart_id", cartID.String()).Msg("cart loaded from DB")
+	s.log.Info().Str("user_id", userID.String()).Msg("cart loaded from DB")
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
 		defer cancel()
-		s.refreshCache(bgCtx, cartID, cart)
+		s.refreshCache(bgCtx, userID, cart)
 	}()
 	return cart, nil
 }
 
-func (s *CartSvc) AddItem(ctx context.Context, cartID, productID uuid.UUID, qty int) error {
+func (s *CartSvc) AddItem(ctx context.Context, userID, productID uuid.UUID, qty int) error {
 	if qty <= 0 || productID == uuid.Nil {
 		return ErrBadRequest
 	}
@@ -94,7 +94,11 @@ func (s *CartSvc) AddItem(ctx context.Context, cartID, productID uuid.UUID, qty 
 		s.log.Warn().Str("product_id", productID.String()).Int("requested_qty", qty).Int32("available_qty", resp.AvailableQty).Msg("requested quantity exceeds available stock")
 		return ErrBadRequest
 	}
-	if err := s.db.UpsertItem(ctx, cartID, productID, float64(resp.Price), qty); err != nil {
+	cart, err := s.getOrCreateCart(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if err := s.db.UpsertItem(ctx, cart.ID, productID, float64(resp.Price), qty); err != nil {
 		switch {
 		case errors.Is(err, postgres.ErrCartNotFound):
 			return ErrNotFound
@@ -108,12 +112,12 @@ func (s *CartSvc) AddItem(ctx context.Context, cartID, productID uuid.UUID, qty 
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
 		defer cancel()
-		s.refreshCache(bgCtx, cartID, nil)
+		s.refreshCache(bgCtx, userID, nil)
 	}()
 	return nil
 }
 
-func (s *CartSvc) ChangeQty(ctx context.Context, cartID, productID uuid.UUID, qty int) error {
+func (s *CartSvc) ChangeQty(ctx context.Context, userID, productID uuid.UUID, qty int) error {
 	if qty <= 0 || productID == uuid.Nil {
 		return ErrBadRequest
 	}
@@ -128,7 +132,11 @@ func (s *CartSvc) ChangeQty(ctx context.Context, cartID, productID uuid.UUID, qt
 		s.log.Warn().Str("product_id", productID.String()).Int("requested_qty", qty).Int32("available_qty", resp.AvailableQty).Msg("requested quantity exceeds available stock")
 		return ErrBadRequest
 	}
-	if err := s.db.ChangeQuantity(ctx, cartID, productID, qty); err != nil {
+	cart, err := s.getOrCreateCart(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if err := s.db.ChangeQuantity(ctx, cart.ID, productID, qty); err != nil {
 		switch {
 		case errors.Is(err, postgres.ErrItemNotFound):
 			return ErrNotFound
@@ -142,13 +150,17 @@ func (s *CartSvc) ChangeQty(ctx context.Context, cartID, productID uuid.UUID, qt
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
 		defer cancel()
-		s.refreshCache(bgCtx, cartID, nil)
+		s.refreshCache(bgCtx, userID, nil)
 	}()
 	return nil
 }
 
-func (s *CartSvc) RemoveItem(ctx context.Context, cartID, productID uuid.UUID) error {
-	if err := s.db.DeleteItem(ctx, cartID, productID); err != nil {
+func (s *CartSvc) RemoveItem(ctx context.Context, userID, productID uuid.UUID) error {
+	cart, err := s.getOrCreateCart(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if err := s.db.DeleteItem(ctx, cart.ID, productID); err != nil {
 		switch {
 		case errors.Is(err, postgres.ErrItemNotFound):
 			return ErrNotFound
@@ -160,13 +172,21 @@ func (s *CartSvc) RemoveItem(ctx context.Context, cartID, productID uuid.UUID) e
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
 		defer cancel()
-		s.refreshCache(bgCtx, cartID, nil)
+		s.refreshCache(bgCtx, userID, nil)
 	}()
 	return nil
 }
 
-func (s *CartSvc) Clear(ctx context.Context, cartID uuid.UUID) error {
-	if err := s.db.DeleteCart(ctx, cartID); err != nil {
+func (s *CartSvc) Clear(ctx context.Context, userID uuid.UUID) error {
+	cart, err := s.db.GetByUser(ctx, userID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrCartNotFound) {
+			return ErrNotFound
+		}
+		s.log.Error().Err(err).Msg("GetByUser failed")
+		return ErrInternal
+	}
+	if err := s.db.DeleteCart(ctx, cart.ID); err != nil {
 		switch {
 		case errors.Is(err, postgres.ErrCartNotFound):
 			return ErrNotFound
@@ -178,16 +198,16 @@ func (s *CartSvc) Clear(ctx context.Context, cartID uuid.UUID) error {
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), bgOpTimeout)
 		defer cancel()
-		if err := s.rds.Del(bgCtx, s.cacheKey(cartID)).Err(); err != nil {
-			s.log.Warn().Err(err).Str("cart_id", cartID.String()).Msg("failed to delete cache on Clear")
+		if err := s.rds.Del(bgCtx, s.cacheKey(userID)).Err(); err != nil {
+			s.log.Warn().Err(err).Str("user_id", userID.String()).Msg("failed to delete cache on Clear")
 		}
-		s.log.Info().Str("cart_id", cartID.String()).Msg("cart cleared and cache deleted")
+		s.log.Info().Str("user_id", userID.String()).Msg("cart cleared and cache deleted")
 	}()
 	return nil
 }
 
-func (s *CartSvc) Checkout(ctx context.Context, cartID uuid.UUID) error {
-	cart, err := s.GetCart(ctx, cartID)
+func (s *CartSvc) Checkout(ctx context.Context, userID uuid.UUID) error {
+	cart, err := s.GetCart(ctx, userID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return ErrNotFound
@@ -209,32 +229,32 @@ func (s *CartSvc) Checkout(ctx context.Context, cartID uuid.UUID) error {
 			return ErrBadRequest
 		}
 	}
-	err = s.Clear(ctx, cartID)
+	err = s.Clear(ctx, userID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			s.log.Warn().Str("cart_id", cartID.String()).Msg("cart already cleared or not found")
+			s.log.Warn().Str("user_id", userID.String()).Msg("cart already cleared or not found")
 		} else {
-			s.log.Error().Err(err).Str("cart_id", cartID.String()).Msg("Clear failed during Checkout")
+			s.log.Error().Err(err).Str("user_id", userID.String()).Msg("Clear failed during Checkout")
 			return ErrInternal
 		}
 	}
-	s.log.Info().Str("cart_id", cartID.String()).Msg("checkout completed successfully")
+	s.log.Info().Str("user_id", userID.String()).Msg("checkout completed successfully")
 	return nil
 }
 
-func (s *CartSvc) cacheKey(cartID uuid.UUID) string {
-	return fmt.Sprintf("%s%s", cacheKeyPrefix, cartID.String())
+func (s *CartSvc) cacheKey(userID uuid.UUID) string {
+	return fmt.Sprintf("%s%s", cacheKeyPrefix, userID.String())
 }
 
-func (s *CartSvc) refreshCache(ctx context.Context, cartID uuid.UUID, cartVal *model.Cart) {
+func (s *CartSvc) refreshCache(ctx context.Context, userID uuid.UUID, cartVal *model.Cart) {
 	var cart *model.Cart
 	var err error
 	if cartVal != nil {
 		cart = cartVal
 	} else {
-		cart, err = s.db.Get(ctx, cartID)
+		cart, err = s.db.GetByUser(ctx, userID)
 		if err != nil {
-			s.log.Warn().Err(err).Str("cart_id", cartID.String()).Msg("cannot refresh cache")
+			s.log.Warn().Err(err).Str("user_id", userID.String()).Msg("cannot refresh cache")
 			return
 		}
 	}
@@ -243,7 +263,24 @@ func (s *CartSvc) refreshCache(ctx context.Context, cartID uuid.UUID, cartVal *m
 		s.log.Error().Err(err).Msg("failed marshal cart in refreshCache")
 		return
 	}
-	if err := s.rds.Set(ctx, s.cacheKey(cartID), data, cacheTTL).Err(); err != nil {
+	if err := s.rds.Set(ctx, s.cacheKey(userID), data, cacheTTL).Err(); err != nil {
 		s.log.Warn().Err(err).Msg("failed set cache in refreshCache")
 	}
+}
+
+func (s *CartSvc) getOrCreateCart(ctx context.Context, userID uuid.UUID) (*model.Cart, error) {
+	cart, err := s.db.GetByUser(ctx, userID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrCartNotFound) {
+			cart, err = s.db.Create(ctx, userID)
+			if err != nil {
+				s.log.Error().Err(err).Str("user_id", userID.String()).Msg("create cart failed")
+				return nil, ErrInternal
+			}
+			return cart, nil
+		}
+		s.log.Error().Err(err).Str("user_id", userID.String()).Msg("GetByUser failed")
+		return nil, ErrInternal
+	}
+	return cart, nil
 }
