@@ -5,6 +5,7 @@ package catalog;
 option java_multiple_files = true;
 option java_package = "org.olzhas.catalogsvc.grpc";
 option go_package = "github.com/oidiral/e-commerce/services/cart-svc/internal/pb/catalog";
+option java_outer_classname = "CatalogProto";
 
 service Catalog {
   rpc Checkout(CheckoutRequest) returns (CheckoutResponse);
