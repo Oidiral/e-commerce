@@ -16,6 +16,40 @@ services:
       timeout: 3s
       retries: 10
 
+  catalog-db:
+    image: postgres:15
+    container_name: catalog-db
+    environment:
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_pass
+      POSTGRES_DB: catalog
+    ports:
+      - "5434:5432"
+    volumes:
+      - catalog_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready -U catalog_user -d catalog" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cart-db:
+    image: postgres:15
+    container_name: cart-db
+    environment:
+      POSTGRES_USER: cart_user
+      POSTGRES_PASSWORD: cart_pass
+      POSTGRES_DB: cart
+    ports:
+      - "5435:5432"
+    volumes:
+      - cart_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready -U cart_user -d cart" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   auth-svc:
     container_name: auth-svc
     image: auth-svc:latest
@@ -36,42 +70,24 @@ services:
     ports:
       - "8081:8080"
 
+  cart-svc:
+    container_name: cart-svc
+    image: cart-svc:latest
+    build:
+      context: ./services/cart-svc
+      dockerfile: Dockerfile
+    environment:
+      CART_DB_HOST: cart-db
+    depends_on:
+      - cart-db
+      - auth-svc
+      - redis
+    env_file:
+      - ./services/cart-svc/.env
+      - ./.env
+    ports:
+        - "8082:8081"
 
-
-
-#  catalog-db:
-#    image: postgres:15
-#    container_name: catalog-db
-#    environment:
-#      POSTGRES_USER: catalog_user
-#      POSTGRES_PASSWORD: catalog_pass
-#      POSTGRES_DB: catalog
-#    ports:
-#      - "5434:5432"
-#    volumes:
-#      - catalog_pgdata:/var/lib/postgresql/data
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready -U catalog_user" ]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
-
-#  cart-svc:
-#    image: postgres:15
-#    container_name: cart-svc
-#    environment:
-#      POSTGRES_USER: cart_user
-#      POSTGRES_PASSWORD: cart_pass
-#      POSTGRES_DB: cart
-#    ports:
-#      - "5435:5432"
-#    volumes:
-#        - cart_pgdata:/var/lib/postgresql/data
-#    healthcheck:
-#        test: [ "CMD-SHELL", "pg_isready -U cart_user" ]
-#        interval: 10s
-#        timeout: 5s
-#        retries: 5
 
   redis:
     image: redis:latest
@@ -79,31 +95,6 @@ services:
     ports:
       - "6379:6379"
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    environment:
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   minio:
     image: minio/minio
@@ -122,5 +113,6 @@ services:
 volumes:
   minio_data:
   auth_pgdata:
+  catalog_pgdata:
   cart_pgdata:
 
