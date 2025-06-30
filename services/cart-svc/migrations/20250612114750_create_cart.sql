@@ -23,4 +23,3 @@ CREATE INDEX cart_item_product_idx ON cart_item (product_id, cart_id);
 DROP INDEX IF EXISTS cart_item_product_idx;
 DROP TABLE IF EXISTS cart_item;
 DROP TABLE IF EXISTS cart;
-DROP TYPE IF EXISTS cart_status;
