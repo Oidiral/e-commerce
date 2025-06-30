@@ -4,19 +4,18 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/oidiral/e-commerce/services/auth-svc/config"
 	user "github.com/oidiral/e-commerce/services/auth-svc/internal/domain/model"
 	AppErr "github.com/oidiral/e-commerce/services/auth-svc/internal/errors"
 	repository "github.com/oidiral/e-commerce/services/auth-svc/internal/repository"
 	"github.com/oidiral/e-commerce/services/auth-svc/internal/utils"
 	"github.com/rs/zerolog"
-	"math/big"
 	"os"
 	"time"
 )
@@ -253,55 +252,40 @@ func (s *AuthService) JWKS() []byte {
 	return s.jwks
 }
 
-func (s *AuthService) loadKeys() {
-	privBytes, err := os.ReadFile(s.cfg.JWT.PrivateKeyPath)
+func (s *AuthService) loadKeys() error {
+	privPEM, err := os.ReadFile(s.cfg.JWT.PrivateKeyPath)
 	if err != nil {
-		s.log.Fatal().Err(err).Msg("read private key")
+		return err
 	}
-	block, _ := pem.Decode(privBytes)
+	block, _ := pem.Decode(privPEM)
 	if block == nil {
-		s.log.Fatal().Msg("failed to parse PEM block containing the private key")
+		return errors.New("failed to decode private key PEM")
 	}
-	pk, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		pk, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	var parsedKey any
+	if parsedKey, err = x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
+		parsedKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
-			s.log.Fatal().Err(err).Msg("parse private key")
+			return errors.New("failed to parse private key")
 		}
-		s.privKey = pk.(*rsa.PrivateKey)
-	} else {
-		s.privKey = pk.(*rsa.PrivateKey)
 	}
-	pubBytes, err := os.ReadFile(s.cfg.JWT.PublicKeyPath)
+	s.privKey = parsedKey.(*rsa.PrivateKey)
+	jwkKey, err := jwk.FromRaw(s.privKey.Public())
 	if err != nil {
-		s.log.Fatal().Err(err).Msg("read public key")
-	}
-	pblock, _ := pem.Decode(pubBytes)
-	if pblock == nil {
-		s.log.Fatal().Msg("failed to parse PEM block containing the public key")
-	}
-	pub, err := x509.ParsePKIXPublicKey(pblock.Bytes)
-	if err != nil {
-		s.log.Fatal().Err(err).Msg("parse public key")
-	}
-	rsaPub := pub.(*rsa.PublicKey)
-
-	n := base64.RawURLEncoding.EncodeToString(rsaPub.N.Bytes())
-	e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(rsaPub.E)).Bytes())
-
-	jwk := map[string]string{
-		"kty": "RSA",
-		"alg": "RS256",
-		"use": "sig",
-		"kid": s.cfg.JWT.KeyID,
-		"n":   n,
-		"e":   e,
+		return errors.New("failed to create JWK from public key")
 	}
 
-	set := map[string]interface{}{"keys": []interface{}{jwk}}
-	data, err := json.Marshal(set)
+	_ = jwkKey.Set(jwk.KeyIDKey, s.cfg.JWT.KeyID)
+	_ = jwkKey.Set(jwk.AlgorithmKey, "RS256")
+	_ = jwkKey.Set(jwk.KeyUsageKey, "sig")
+
+	keySet := jwk.NewSet()
+	keySet.AddKey(jwkKey)
+
+	buf, err := json.Marshal(keySet)
 	if err != nil {
-		s.log.Fatal().Err(err).Msg("marshal JWKS")
+		return err
 	}
-	s.jwks = data
+	s.jwks = buf
+	s.log.Info().Msg("JWT keys loaded successfully")
+	return nil
 }
