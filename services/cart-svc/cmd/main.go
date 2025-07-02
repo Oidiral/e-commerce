@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/oidiral/e-commerce/services/cart-svc/config"
@@ -16,7 +18,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -61,9 +66,36 @@ func main() {
 	controller.RegisterRoutes(router, cartService)
 
 	logger.Info().Msg("Routes registered")
-	if err := router.Run(cfg.Server.Port); err != nil {
-		logger.Fatal().Err(err).Msg("Failed to start server")
+
+	srv := &http.Server{
+		Addr:         cfg.Server.Port,
+		Handler:      router,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
+
+	go func() {
+		logger.Info().Msg("Listening on port " + cfg.Server.Port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal().Err(err).Msg("Failed to start server")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Info().Msg("Shutdown signal received")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Error().Err(err).Msg("Server shutdown failed")
+	} else {
+		logger.Info().Msg("Server gracefully stopped")
+	}
+
 }
 
 func SetupLogger(env string) zerolog.Logger {
