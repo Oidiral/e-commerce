@@ -17,9 +17,11 @@ import (
 )
 
 var (
-	ErrNotFound   = errors.New("not found")
-	ErrBadRequest = errors.New("bad request")
-	ErrInternal   = errors.New("internal error")
+	ErrNotFound    = errors.New("not found")
+	ErrBadRequest  = errors.New("bad request")
+	ErrInternal    = errors.New("internal error")
+	ErrOutOfStock  = errors.New("out of stock")
+	ErrInvalidItem = errors.New("invalid cart item")
 )
 
 const (
@@ -207,38 +209,88 @@ func (s *CartSvc) Clear(ctx context.Context, userID uuid.UUID) error {
 }
 
 func (s *CartSvc) Checkout(ctx context.Context, userID uuid.UUID) error {
+	key := s.cacheKey(userID)
+	raw, rErr := s.rds.GetDel(ctx, key).Result()
+	if rErr == nil {
+		var cart model.Cart
+		if unErr := json.Unmarshal([]byte(raw), &cart); unErr == nil {
+			s.log.Info().Str("user_id", userID.String()).
+				Msg("cache hit for cart during Checkout")
+			if err := s.checkProduct(ctx, &cart); err != nil {
+				s.log.Error().Err(err).Str("user_id", userID.String()).
+					Msg("product check failed during Checkout")
+				return err
+			}
+			s.log.Info().Str("user_id", userID.String()).
+				Msg("checkout completed successfully using cache")
+			return nil
+		}
+
+		s.log.Warn().Str("user_id", userID.String()).Msg("cache miss for checkout")
+
+	} else if !errors.Is(rErr, redis.Nil) {
+		s.log.Warn().Err(rErr).Str("user_id", userID.String()).
+			Msg("failed to get cart from cache, falling back to DB")
+	} else {
+		s.log.Info().Str("user_id", userID.String()).
+			Msg("cache miss for cart during Checkout, falling back to DB")
+	}
+
 	cart, err := s.GetCart(ctx, userID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
+			s.log.Warn().Str("user_id", userID.String()).
+				Msg("cart not found during Checkout")
 			return ErrNotFound
 		}
-		s.log.Error().Err(err).Msg("GetCart failed during Checkout")
+		s.log.Error().Err(err).Str("user_id", userID.String()).
+			Msg("GetCart failed during Checkout")
 		return ErrInternal
 	}
+
+	if err := s.checkProduct(ctx, cart); err != nil {
+		s.log.Error().Err(err).Str("user_id", userID.String()).
+			Msg("product check failed during Checkout")
+		return err
+	}
+
+	if err := s.Clear(ctx, userID); err != nil && !errors.Is(err, ErrNotFound) {
+		s.log.Error().Err(err).Str("user_id", userID.String()).
+			Msg("Clear failed during Checkout")
+		return ErrInternal
+	}
+
+	s.log.Info().Str("user_id", userID.String()).
+		Msg("checkout completed successfully using DB")
+	return nil
+}
+
+func (s *CartSvc) checkProduct(ctx context.Context, cart *model.Cart) error {
+	if cart == nil || len(cart.Items) == 0 {
+		return ErrNotFound
+	}
+
 	for _, item := range cart.Items {
+		if item.ProductID == uuid.Nil || item.Qty <= 0 {
+			return ErrInvalidItem
+		}
+
 		resp, err := s.catalogClient.Checkout(ctx, &catalog.CheckoutRequest{
 			ItemId:   item.ProductID.String(),
 			Quantity: int32(item.Qty),
 		})
 		if err != nil {
-			s.log.Error().Err(err).Str("product_id", item.ProductID.String()).Msg("Checkout failed for product")
+			s.log.Error().Err(err).Str("product_id", item.ProductID.String()).
+				Msg("catalog Checkout RPC failed")
 			return ErrInternal
 		}
+
 		if !resp.GetAvailable() {
-			s.log.Warn().Str("product_id", item.ProductID.String()).Msg("product not available for checkout")
-			return ErrBadRequest
+			s.log.Warn().Str("product_id", item.ProductID.String()).
+				Msg("product not available for checkout")
+			return ErrOutOfStock
 		}
 	}
-	err = s.Clear(ctx, userID)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			s.log.Warn().Str("user_id", userID.String()).Msg("cart already cleared or not found")
-		} else {
-			s.log.Error().Err(err).Str("user_id", userID.String()).Msg("Clear failed during Checkout")
-			return ErrInternal
-		}
-	}
-	s.log.Info().Str("user_id", userID.String()).Msg("checkout completed successfully")
 	return nil
 }
 
